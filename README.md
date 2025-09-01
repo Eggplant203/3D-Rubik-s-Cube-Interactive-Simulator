@@ -2,7 +2,7 @@
 
 A modern, interactive 3D Rubik's Cube web application built with TypeScript, Three.js, and Vite. This application allows users to interact with a virtual Rubik's Cube, practice solving techniques, track statistics, and more.
 
-![3D Rubik's Cube](https://via.placeholder.com/800x400?text=3D+Rubik's+Cube+Screenshot)
+![3D Rubik's Cube](./picture/screenshot.png)
 
 ## Features
 
