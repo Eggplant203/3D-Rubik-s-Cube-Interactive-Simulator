@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Rubik's Cube</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header (Top Bar) -->
+      <header class="header">
+        <div class="header-content">
+          <div class="logo-section">
+            <i class="fas fa-cube"></i>
+            <h1>3D Rubik's Cube</h1>
+          </div>
+          <div class="header-controls">
+            <select id="modeSelect" class="mode-selector">
+              <option value="practice">Practice</option>
+              <option value="timer">Timer</option>
+            </select>
+            <button id="themeToggle" class="theme-toggle">
+              <i class="fas fa-moon"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Controls (Below Header) -->
+      <div class="main-controls">
+        <div class="primary-controls">
+          <button id="scrambleBtn" class="btn btn-success">
+            <i class="fas fa-random"></i> Scramble
+          </button>
+          <button id="resetBtn" class="btn btn-secondary">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+          <button id="solveBtn" class="btn btn-purple">
+            <i class="fas fa-magic"></i> Reversed
+          </button>
+        </div>
+        <div class="secondary-controls">
+          <button id="undoBtn" class="btn btn-small">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <button id="redoBtn" class="btn btn-small">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <button id="resetViewBtn" class="btn btn-small" title="Reset camera view (Middle-click)">
+            <i class="fas fa-crosshairs"></i>
+          </button>
+          <button id="toggleUIBtn" class="btn btn-danger btn-small">
+            <i class="fas fa-eye-slash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Toggle button cho khi sidebar collapsed -->
+      <button class="panel-toggle-collapsed" id="panelToggleCollapsed">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+
+      <!-- Side Panel -->
+      <aside class="side-panel" id="sidePanel">
+        <div class="panel-toggle" id="panelToggle">
+          <i class="fas fa-chevron-left"></i>
+        </div>
+        
+        <div class="panel-content">
+          <!-- Statistics Tab -->
+          <div class="panel-section active" data-tab="statistics">
+            <div class="section-header">
+              <i class="fas fa-chart-bar"></i>
+              <h3>Statistics</h3>
+            </div>
+            <div class="section-content">
+              <div class="stat-item timer-section" style="display: none;">
+                <div class="timer-display">
+                  <i class="fas fa-stopwatch"></i>
+                  <span id="timerDisplay">00:00.00</span>
+                </div>
+                <button id="timerToggle" class="btn btn-small">Start</button>
+              </div>
+              <div class="stat-item">
+                <label>Move Counter</label>
+                <span id="moveCounter">0</span>
+              </div>
+              <div class="stat-item">
+                <label>Best Time</label>
+                <span id="bestTime">--:--</span>
+              </div>
+              <div class="stat-item">
+                <label>Average</label>
+                <span id="averageTime">--:--</span>
+              </div>
+              <div class="stat-item">
+                <label>Last 5</label>
+                <div id="lastTimes">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Options Tab -->
+          <div class="panel-section" data-tab="options">
+            <div class="section-header">
+              <i class="fas fa-cog"></i>
+              <h3>Options</h3>
+            </div>
+            <div class="section-content">
+              <div class="control-group">
+                <label>Scramble Steps</label>
+                <div class="input-group">
+                  <input type="number" id="scrambleSteps" min="1" value="25" class="number-input">
+                  <button id="resetScrambleSteps" class="btn btn-small btn-secondary" title="Reset to default">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="showClock" checked>
+                  <span class="checkmark"></span>
+                  Show Clock
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Appearance Tab -->
+          <div class="panel-section" data-tab="appearance">
+            <div class="section-header">
+              <i class="fas fa-palette"></i>
+              <h3>Appearance</h3>
+            </div>
+            <div class="section-content">
+              <div class="control-group">
+                <label>Cube Size</label>
+                <select id="cubeSize">
+                  <option value="2">2x2x2</option>
+                  <option value="3" selected>3x3x3</option>
+                  <option value="4">4x4x4</option>
+                  <option value="5">5x5x5</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label>Animation Speed</label>
+                <select id="animationSpeed">
+                  <option value="slow">Slow</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="fast">Fast</option>
+                  <option value="ultra">Ultra Fast</option>
+                  <option value="robot">Robot</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label>Color Theme</label>
+                <select id="colorTheme">
+                  <option value="classic" selected>Classic</option>
+                  <option value="neon">Neon</option>
+                  <option value="pastel">Pastel</option>
+                  <option value="earth">Earth</option>
+                  <option value="ocean">Ocean</option>
+                  <option value="fire">Fire</option>
+                  <option value="rainbow">Rainbow</option>
+                  <option value="monochrome">Monochrome</option>
+                  <option value="random">Random</option>
+                </select>
+                <button id="generateRandomBtn" class="btn btn-small generate-random-btn" style="margin-top: 5px; width: 100%; display: none;">
+                  <i class="fas fa-dice"></i> Generate New Random
+                </button>
+              </div>
+              <div class="control-group">
+                <label>Background</label>
+                <select id="backgroundTheme">
+                  <option value="dark" selected>Dark</option>
+                  <option value="light">Light</option>
+                  <option value="blue">Blue</option>
+                  <option value="gradient">Gradient</option>
+                  <option value="sunset">Sunset</option>
+                  <option value="forest">Forest</option>
+                  <option value="ocean">Ocean</option>
+                  <option value="space">Space</option>
+                  <option value="fire">Fire</option>
+                  <option value="aurora">Aurora</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="blindfoldMode">
+                  <span class="checkmark"></span>
+                  Blindfold Mode
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls Tab -->
+          <div class="panel-section" data-tab="controls">
+            <div class="section-header">
+              <i class="fas fa-gamepad"></i>
+              <h3>Controls</h3>
+            </div>
+            <div class="section-content">
+              <!-- Sequence Input moved to top of Controls tab -->
+              <div class="control-group sequence-input-top">
+                <label>Sequence Input</label>
+                <div class="sequence-input-group">
+                  <input type="text" id="sequenceInput" class="sequence-input" placeholder="e.g: R L' B2 F' F" />
+                  <button id="executeSequenceBtn" class="btn btn-primary btn-small">Execute</button>
+                </div>
+                <div class="sequence-feedback" id="sequenceFeedback"></div>
+              </div>
+              <div class="control-group">
+                <label>Face Rotations</label>
+                <div class="button-grid">
+                  <button id="rotateFront" class="btn btn-small">F</button>
+                  <button id="rotateFrontPrime" class="btn btn-small">F'</button>
+                  <button id="rotateBack" class="btn btn-small">B</button>
+                  <button id="rotateBackPrime" class="btn btn-small">B'</button>
+                  <button id="rotateRight" class="btn btn-small">R</button>
+                  <button id="rotateRightPrime" class="btn btn-small">R'</button>
+                  <button id="rotateLeft" class="btn btn-small">L</button>
+                  <button id="rotateLeftPrime" class="btn btn-small">L'</button>
+                  <button id="rotateTop" class="btn btn-small">U</button>
+                  <button id="rotateTopPrime" class="btn btn-small">U'</button>
+                  <button id="rotateBottom" class="btn btn-small">D</button>
+                  <button id="rotateBottomPrime" class="btn btn-small">D'</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <label>Middle Layer Rotations</label>
+                <div class="button-grid">
+                  <button id="rotateMiddle" class="btn btn-small">M</button>
+                  <button id="rotateMiddlePrime" class="btn btn-small">M'</button>
+                  <button id="rotateEquator" class="btn btn-small">E</button>
+                  <button id="rotateEquatorPrime" class="btn btn-small">E'</button>
+                  <button id="rotateStanding" class="btn btn-small">S</button>
+                  <button id="rotateStandingPrime" class="btn btn-small">S'</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <label>Cube Rotations</label>
+                <div class="button-grid">
+                  <button id="rotateCubeX" class="btn btn-small">X</button>
+                  <button id="rotateCubeXPrime" class="btn btn-small">X'</button>
+                  <button id="rotateCubeY" class="btn btn-small">Y</button>
+                  <button id="rotateCubeYPrime" class="btn btn-small">Y'</button>
+                  <button id="rotateCubeZ" class="btn btn-small">Z</button>
+                  <button id="rotateCubeZPrime" class="btn btn-small">Z'</button>
+                </div>
+              </div>
+              <div class="control-group customize-controls-group">
+                <button id="customizeControlsBtn" class="btn btn-primary" style="width: 100%;">
+                  <i class="fas fa-keyboard"></i> Customize Controls
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Note Tab -->
+          <div class="panel-section" data-tab="note">
+            <div class="section-header">
+              <i class="fas fa-sticky-note"></i>
+              <h3>Notes</h3>
+            </div>
+            <div class="section-content">
+              <div class="saved-notes" id="savedNotes">
+                <!-- Saved notes will appear here -->
+              </div>
+              <div class="note-divider">
+                <hr>
+                <span>Add New Note</span>
+                <hr>
+              </div>
+              <div class="control-group">
+                <input type="text" id="noteTitle" placeholder="Formula title..." class="note-input">
+              </div>
+              <div class="control-group">
+                <textarea id="noteContent" placeholder="Enter your Rubik's cube formula here..." class="note-textarea"></textarea>
+              </div>
+              <div class="note-controls">
+                <button id="saveNoteBtn" class="btn btn-small btn-success">
+                  <i class="fas fa-save"></i> Save
+                </button>
+                <button id="clearNoteBtn" class="btn btn-small btn-secondary">
+                  <i class="fas fa-trash"></i> Clear
+                </button>
+              </div>
+              <div class="note-import-export">
+                <button id="exportNotesBtn" class="btn btn-small btn-info">
+                  <i class="fas fa-download"></i> Export<br>Notes
+                </button>
+                <button id="importNotesBtn" class="btn btn-small btn-warning">
+                  <i class="fas fa-upload"></i> Import<br>Notes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn active" data-tab="statistics">
+            <i class="fas fa-chart-bar"></i>
+          </button>
+          <button class="tab-btn" data-tab="appearance">
+            <i class="fas fa-palette"></i>
+          </button>
+          <button class="tab-btn" data-tab="controls">
+            <i class="fas fa-gamepad"></i>
+          </button>
+          <button class="tab-btn" data-tab="options">
+            <i class="fas fa-cog"></i>
+          </button>
+          <button class="tab-btn" data-tab="note">
+            <i class="fas fa-sticky-note"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <div id="canvas-container"></div>
+      </main>
+
+      <!-- Bottom Bar -->
+      <footer class="bottom-bar">
+        <div class="bottom-controls">
+          <button id="soundToggle" class="btn btn-small">
+            <i class="fas fa-volume-up"></i>
+          </button>
+          <button id="fullscreenToggle" class="btn btn-small">
+            <i class="fas fa-expand"></i>
+          </button>
+          <button id="saveScrambleBtn" class="btn btn-small">
+            <i class="fas fa-save"></i>
+          </button>
+          <button id="loadScrambleBtn" class="btn btn-small">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+        <div class="bottom-right-controls">
+          <button id="tutorialBtn" class="btn btn-small" title="Tutorial">
+            <i class="fas fa-book"></i>
+          </button>
+        </div>
+      </footer>
+
+      <!-- Success Modal -->
+      <div class="modal" id="successModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <i class="fas fa-trophy"></i>
+            <h2>Congratulations!</h2>
+          </div>
+          <div class="modal-body">
+            <p>You solved the cube!</p>
+            <div class="solve-stats">
+              <div class="stat">
+                <span class="label">Time:</span>
+                <span class="value" id="solveTime">--:--</span>
+              </div>
+              <div class="stat">
+                <span class="label">Moves:</span>
+                <span class="value" id="solveMoves">--</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="modalCloseBtn" class="btn btn-primary">Continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Record Warning Modal -->
+      <div class="modal" id="saveRecordWarningModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h2>Warning</h2>
+          </div>
+          <div class="modal-body">
+            <p>Scramble steps are set to less than 25. The cube may not be sufficiently randomized for timing.</p>
+            <p>Do you want to continue?</p>
+          </div>
+          <div class="modal-footer">
+            <button id="saveRecordWarningCancelBtn" class="btn btn-secondary">Cancel</button>
+            <button id="saveRecordWarningContinueBtn" class="btn btn-primary">Continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial Modal -->
+      <div class="modal" id="tutorialModal">
+        <div class="modal-content tutorial-modal-content">
+          <div class="modal-header">
+            <i class="fas fa-book"></i>
+            <h2>Tutorial</h2>
+          </div>
+          <div class="modal-body">
+            <div class="tutorial-grid">
+              <div class="tutorial-section">
+                <div class="section-header">
+                  <i class="fas fa-mouse-pointer"></i>
+                  <h3>Mouse Controls</h3>
+                </div>
+                <ul>
+                  <li><i class="fas fa-hand-paper"></i> <strong>Left-click and drag:</strong> Rotate the cube</li>
+                  <li><i class="fas fa-hand-rock"></i> <strong>Right-click and drag:</strong> Pan the view</li>
+                  <li><i class="fas fa-mouse"></i> <strong>Mouse wheel:</strong> Zoom in/out</li>
+                </ul>
+              </div>
+              
+              <div class="tutorial-section">
+                <div class="section-header">
+                  <i class="fas fa-keyboard"></i>
+                  <h3>Keyboard Controls</h3>
+                </div>
+                <ul>
+                  <li><i class="fas fa-cube"></i> <strong>R, L, U, D, F, B:</strong> Rotate faces</li>
+                  <li><i class="fas fa-undo"></i> <strong>Shift + Face:</strong> Counter-clockwise</li>
+                  <li><i class="fas fa-layer-group"></i> <strong>M, E, S:</strong> Middle/Equator/Standing layers</li>
+                  <li><i class="fas fa-sync-alt"></i> <strong>X, Y, Z:</strong> Rotate entire cube</li>
+                  <li><i class="fas fa-random"></i> <strong>Space:</strong> Scramble cube</li>
+                  <li><i class="fas fa-history"></i> <strong>Ctrl+Z/Y:</strong> Undo/Redo</li>
+                </ul>
+              </div>
+              
+              <div class="tutorial-section">
+                <div class="section-header">
+                  <i class="fas fa-gamepad"></i>
+                  <h3>Buttons</h3>
+                </div>
+                <ul>
+                  <li><i class="fas fa-random"></i> <strong>Scramble:</strong> Mix the cube</li>
+                  <li><i class="fas fa-undo"></i> <strong>Reset:</strong> Solved state</li>
+                  <li><i class="fas fa-magic"></i> <strong>Reversed:</strong> Show reverse moves</li>
+                  <li><i class="fas fa-exchange-alt"></i> <strong>Undo/Redo:</strong> Move history</li>
+                  <li><i class="fas fa-crosshairs"></i> <strong>Reset View:</strong> Center camera</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer tutorial-modal-footer" style="text-align: right; display: flex; justify-content: flex-end;">
+            <button id="tutorialCloseBtn" class="btn btn-primary" style="margin-left: auto;">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customize Controls Modal -->
+      <div id="customizeControlsModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2><i class="fas fa-keyboard"></i> Customize Controls</h2>
+            <span class="modal-close" id="customizeControlsClose">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div class="control-mapping-section">
+              <h3>Face Rotations</h3>
+              <div class="mapping-grid">
+                <div class="mapping-item">
+                  <label>Front (F)</label>
+                  <input type="text" id="keyFront" class="key-input" maxlength="1" value="F" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Back (B)</label>
+                  <input type="text" id="keyBack" class="key-input" maxlength="1" value="B" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Right (R)</label>
+                  <input type="text" id="keyRight" class="key-input" maxlength="1" value="R" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Left (L)</label>
+                  <input type="text" id="keyLeft" class="key-input" maxlength="1" value="L" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Up (U)</label>
+                  <input type="text" id="keyUp" class="key-input" maxlength="1" value="U" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Down (D)</label>
+                  <input type="text" id="keyDown" class="key-input" maxlength="1" value="D" placeholder="Press key">
+                </div>
+              </div>
+            </div>
+            <div class="control-mapping-section">
+              <h3>Middle Layer Rotations</h3>
+              <div class="mapping-grid">
+                <div class="mapping-item">
+                  <label>Middle (M)</label>
+                  <input type="text" id="keyMiddle" class="key-input" maxlength="1" value="M" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Equator (E)</label>
+                  <input type="text" id="keyEquator" class="key-input" maxlength="1" value="E" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Standing (S)</label>
+                  <input type="text" id="keyStanding" class="key-input" maxlength="1" value="S" placeholder="Press key">
+                </div>
+              </div>
+            </div>
+            <div class="control-mapping-section">
+              <h3>Cube Rotations</h3>
+              <div class="mapping-grid">
+                <div class="mapping-item">
+                  <label>X Axis</label>
+                  <input type="text" id="keyCubeX" class="key-input" maxlength="1" value="X" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Y Axis</label>
+                  <input type="text" id="keyCubeY" class="key-input" maxlength="1" value="Y" placeholder="Press key">
+                </div>
+                <div class="mapping-item">
+                  <label>Z Axis</label>
+                  <input type="text" id="keyCubeZ" class="key-input" maxlength="1" value="Z" placeholder="Press key">
+                </div>
+              </div>
+            </div>
+            <div class="control-mapping-section">
+              <h3>Modifiers</h3>
+              <div class="mapping-grid">
+                <div class="mapping-item">
+                  <label>Reverse (Shift)</label>
+                  <input type="text" id="keyShift" class="key-input" maxlength="10" value="SHIFT" placeholder="Press Shift key">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="resetControlsBtn" class="btn btn-secondary">
+              <i class="fas fa-undo"></i> Reset to Default
+            </button>
+            <button id="applyControlsBtn" class="btn btn-primary">
+              <i class="fas fa-check"></i> Apply Changes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating UI Toggle (when UI is hidden) -->
+      <div class="floating-toggle" id="floatingToggle" style="display: none;">
+        <i class="fas fa-eye"></i>
+      </div>
+
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

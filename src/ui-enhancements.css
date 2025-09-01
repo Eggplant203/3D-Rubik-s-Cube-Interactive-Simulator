@@ -1,0 +1,437 @@
+/* Additional UI Animations and Effects */
+
+/* Smooth scrollbar for side panel */
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.pan.note-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.note-import-export {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.note-import-export .btn {
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+}ntent::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Button ripple effect */
+/* Note: style.css contains base button styling, this file adds enhancements */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Floating animations */
+.floating-toggle {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Success modal animations */
+.modal.show .modal-content {
+  animation: celebrate 0.6s ease;
+}
+
+@keyframes celebrate {
+  0% { transform: scale(0.8) rotate(-5deg); }
+  50% { transform: scale(1.05) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Timer glow effect */
+.timer-display.running {
+  animation: timerGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes timerGlow {
+  from { box-shadow: 0 0 5px var(--primary-color); }
+  to { box-shadow: 0 0 20px var(--primary-color); }
+}
+
+/* Progress indicator */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  width: 0%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 15px 20px;
+  box-shadow: var(--shadow-medium);
+  z-index: 1000;
+  transform: translateX(400px);
+  transition: transform 0.3s ease;
+  max-width: 300px;
+}
+
+.notification.show {
+  transform: translateX(0);
+}
+
+.notification.success {
+  border-left: 4px solid var(--success-color);
+}
+
+.notification.error {
+  border-left: 4px solid var(--danger-color);
+}
+
+.notification.info {
+  border-left: 4px solid var(--primary-color);
+}
+
+/* Loading states */
+.btn.loading {
+  pointer-events: none;
+  position: relative;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Cube size indicator */
+.cube-size-display {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  backdrop-filter: blur(10px);
+}
+
+/* Statistics chart styles */
+.stats-chart {
+  width: 100%;
+  height: 100px;
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius);
+  margin: 10px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-bar {
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  background: linear-gradient(to top, var(--primary-color), var(--secondary-color));
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+/* Keyboard shortcut hints */
+.shortcut-hint {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.btn:hover .shortcut-hint {
+  opacity: 1;
+}
+
+/* Color picker styles */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.color-option {
+  width: 30px;
+  height: 30px;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: var(--text-primary);
+}
+
+.color-option.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.3);
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+  box-shadow: var(--shadow-light);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Custom select styles */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+/* Focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Disabled states */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-color: #000000;
+    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.8);
+    --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.8);
+  }
+  
+  [data-theme="dark"] {
+    --border-color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Note Tab Styles */
+.note-input, .note-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.note-input:focus, .note-textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(52, 102, 255, 0.2);
+}
+
+.note-input {
+  margin-bottom: 12px;
+}
+
+.note-textarea {
+  min-height: 120px;
+  resize: vertical;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.note-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.saved-notes {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 0;
+}
+
+.saved-note-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.saved-note-item:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.saved-note-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.saved-note-content {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.delete-note-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.delete-note-btn:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+/* Note Divider */
+.note-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.note-divider hr {
+  flex: 1;
+  border: none;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.note-divider span {
+  padding: 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
