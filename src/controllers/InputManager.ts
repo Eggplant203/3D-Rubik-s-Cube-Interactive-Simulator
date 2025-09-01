@@ -96,8 +96,43 @@ export class KeyboardController implements InputHandler {
   }
 
   /**
-   * Handle key press events - Only cube rotation keys, no UI shortcuts
+   * Get normalized key from keyboard event, ignoring Shift for key identification
    */
+  private getNormalizedKey(event: KeyboardEvent): string {
+    if (event.code.startsWith('Digit')) {
+      return event.code.slice(5); // 'Digit1' -> '1'
+    } else if (event.code.startsWith('Key')) {
+      return event.code.slice(3).toLowerCase(); // 'KeyA' -> 'a'
+    } else if (event.code === 'Space') {
+      return 'space';
+    } else if (event.code.startsWith('Arrow')) {
+      return event.code.slice(5).toLowerCase(); // 'ArrowUp' -> 'up'
+    } else if (event.code === 'Backspace') {
+      return 'backspace';
+    } else if (event.code === 'Semicolon') {
+      return ';';
+    } else if (event.code === 'Quote') {
+      return "'";
+    } else if (event.code === 'BracketLeft') {
+      return '[';
+    } else if (event.code === 'BracketRight') {
+      return ']';
+    } else if (event.code === 'Backslash') {
+      return '\\';
+    } else if (event.code === 'Comma') {
+      return ',';
+    } else if (event.code === 'Period') {
+      return '.';
+    } else if (event.code === 'Slash') {
+      return '/';
+    } else if (event.code === 'Minus') {
+      return '-';
+    } else if (event.code === 'Equal') {
+      return '=';
+    } else {
+      return event.key.toLowerCase();
+    }
+  }
   private onKeyDown(event: KeyboardEvent): void {
     if (!this.enabled) {
       return;
@@ -162,14 +197,7 @@ export class KeyboardController implements InputHandler {
     }
 
     // Only handle cube rotation keys, avoid UI conflicts
-    let normalizedKey = event.key.toLowerCase();
-
-    // Handle special key mappings
-    if (event.key === ' ') {
-      normalizedKey = 'space';
-    } else if (event.key.startsWith('Arrow')) {
-      normalizedKey = event.key.replace('Arrow', '').toLowerCase(); // ArrowUp -> up
-    }
+    let normalizedKey = this.getNormalizedKey(event);
 
     if (normalizedKey === this.keyMappings.front) {
       event.preventDefault();
@@ -209,7 +237,7 @@ export class KeyboardController implements InputHandler {
       this.cube.rotateCubeZ(isShiftPressed);
     } else {
       // Handle corner rotations with Ctrl + number (1-8)
-      switch (event.key.toLowerCase()) {
+      switch (normalizedKey) {
         case '1':
         case '2':
         case '3':
@@ -221,7 +249,7 @@ export class KeyboardController implements InputHandler {
           if (isCtrlPressed) {
             event.preventDefault();
             
-            const cornerIndex = parseInt(event.key);
+            const cornerIndex = parseInt(normalizedKey);
             const direction = isShiftPressed ? 'counter-clockwise' : 'clockwise';
             const cornerNames = [
               'Bottom-Left-Back', 'Bottom-Left-Front', 'Top-Left-Back', 'Top-Left-Front',

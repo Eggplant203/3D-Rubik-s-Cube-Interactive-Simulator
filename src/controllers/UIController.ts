@@ -658,6 +658,7 @@ export class UIController {
 
     // Modal controls
     this.elements.modal.modalCloseBtn.addEventListener('click', () => {
+      this.handleReset();
       this.hideSuccessModal();
     });
 
