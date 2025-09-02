@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Cubelet } from './Cubelet';
-import { CUBE_CONFIG, FACES, ROTATION_AXES } from '../config/constants';
+import { CUBE_CONFIG, FACES, ROTATION_AXES, standardizeCubeConfig } from '../config/constants';
 import { RotationLogic } from './RotationLogic';
+import { DirectionHandler, StandardDirectionHandler } from './DirectionHandler';
 
 /**
  * Face type representing a 3x3 grid of colors
@@ -32,6 +33,8 @@ export class RubiksCube {
   private animationFrameId: number | null = null;
   private currentRotationGroup: THREE.Group | null = null;
   private rotationLogic: RotationLogic;
+  protected directionHandler: DirectionHandler = new StandardDirectionHandler();
+  private isDisposed: boolean = false;
   
   // Callbacks
   public onMove?: () => void;
@@ -49,6 +52,10 @@ export class RubiksCube {
   constructor(scene: THREE.Scene) {
     this.scene = scene;
     this.cubeGroup = new THREE.Group();
+    
+    // Apply standard configuration before initialization
+    standardizeCubeConfig('3x3x3');
+    
     this.cubeGroup.position.copy(CUBE_CONFIG.positionOffset);
     this.scene.add(this.cubeGroup);
     this.rotationLogic = new RotationLogic();
@@ -96,6 +103,14 @@ export class RubiksCube {
   public getCubeState(): CubeState {
     return this.rotationLogic.getCubeState();
   }
+  
+  /**
+   * Get cube type - this base implementation returns 3x3x3
+   * This is overridden in subclasses
+   */
+  public getCubeType(): string {
+    return '3x3x3';
+  }
 
   /**
    * Initializes the cube with all 27 cubelets
@@ -103,17 +118,22 @@ export class RubiksCube {
   private initialize(): void {
     this.cubelets = [];
     this.originalPositions = [];
+    
+    // Standardize cube configuration for 3x3x3
+    standardizeCubeConfig('3x3x3');
+    
     const size = CUBE_CONFIG.size;
     const cubeSize = CUBE_CONFIG.cubeSize;
-    const offset = (size - 1) * cubeSize / 2;
+    const spacing = CUBE_CONFIG.spacing;
+    const offset = (size - 1) * (cubeSize + spacing) / 2;
 
     for (let x = 0; x < size; x++) {
       for (let y = 0; y < size; y++) {
         for (let z = 0; z < size; z++) {
           const position = new THREE.Vector3(
-            x * cubeSize - offset,
-            y * cubeSize - offset,
-            z * cubeSize - offset
+            x * (cubeSize + spacing) - offset,
+            y * (cubeSize + spacing) - offset,
+            z * (cubeSize + spacing) - offset
           );
 
           const colors = this.determineCubeletColors(x, y, z, size);
@@ -124,6 +144,11 @@ export class RubiksCube {
           this.cubeGroup.add(cubelet.mesh);
         }
       }
+    }
+    
+    // Force update cube state after initialization to ensure rotations work
+    if (this.rotationLogic) {
+      this.rotationLogic.updateCubeStateFromCubelets(this.cubelets);
     }
   }
 
@@ -155,13 +180,16 @@ export class RubiksCube {
   public async rotateFace(face: keyof typeof FACES, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
     if (this.animating) return;
     
+    // Convert direction based on cube type using the direction handler
+    const actualClockwise = this.directionHandler.convertDirection(clockwise);
+    
     // Update cube state first
-    this.rotationLogic.updateCubeStateFace(face, clockwise);
+    this.rotationLogic.updateCubeStateFace(face, actualClockwise);
     
     // Add to move history if not skipping
     if (!skipHistory) {
       this.moveHistory = this.moveHistory.slice(0, this.historyIndex + 1);
-      this.moveHistory.push({ type: 'face', face, clockwise });
+      this.moveHistory.push({ type: 'face', face, clockwise: actualClockwise });
       this.historyIndex++;
     }
 
@@ -171,7 +199,7 @@ export class RubiksCube {
     }
     
     this.animating = true;
-    const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
+    const angle = actualClockwise ? Math.PI / 2 : -Math.PI / 2;
     const cubelets = this.getFaceCubelets(face);
     const axis = this.getFaceAxis(face);
     
@@ -454,16 +482,19 @@ export class RubiksCube {
    */
   public async rotateCubeX(clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
     if (this.animating) return;
+    
+    // Convert direction based on cube type
+    const actualClockwise = this.directionHandler.convertDirection(clockwise);
 
     // Add to move history if not skipping
     if (!skipHistory) {
       this.moveHistory = this.moveHistory.slice(0, this.historyIndex + 1);
-      this.moveHistory.push({ type: 'cubeX', clockwise });
+      this.moveHistory.push({ type: 'cubeX', clockwise: actualClockwise });
       this.historyIndex++;
     }
 
     // Update cube state
-    this.rotationLogic.updateCubeStateCubeX(clockwise);
+    this.rotationLogic.updateCubeStateCubeX(actualClockwise);
 
     // Call onMove callback
     if (this.onMove) {
@@ -471,7 +502,7 @@ export class RubiksCube {
     }
 
     this.animating = true;
-    const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
+    const angle = actualClockwise ? Math.PI / 2 : -Math.PI / 2;
     const cubelets = this.cubelets; // All cubelets
     const axis = ROTATION_AXES.X;
 
@@ -528,16 +559,19 @@ export class RubiksCube {
    */
   public async rotateCubeY(clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
     if (this.animating) return;
+    
+    // Convert direction based on cube type
+    const actualClockwise = this.directionHandler.convertDirection(clockwise);
 
     // Add to move history if not skipping
     if (!skipHistory) {
       this.moveHistory = this.moveHistory.slice(0, this.historyIndex + 1);
-      this.moveHistory.push({ type: 'cubeY', clockwise });
+      this.moveHistory.push({ type: 'cubeY', clockwise: actualClockwise });
       this.historyIndex++;
     }
 
     // Update cube state
-    this.rotationLogic.updateCubeStateCubeY(clockwise);
+    this.rotationLogic.updateCubeStateCubeY(actualClockwise);
 
     // Call onMove callback
     if (this.onMove) {
@@ -545,7 +579,7 @@ export class RubiksCube {
     }
 
     this.animating = true;
-    const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
+    const angle = actualClockwise ? Math.PI / 2 : -Math.PI / 2;
     const cubelets = this.cubelets; // All cubelets
     const axis = ROTATION_AXES.Y;
 
@@ -602,16 +636,19 @@ export class RubiksCube {
    */
   public async rotateCubeZ(clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
     if (this.animating) return;
+    
+    // Convert direction based on cube type
+    const actualClockwise = this.directionHandler.convertDirection(clockwise);
 
     // Add to move history if not skipping
     if (!skipHistory) {
       this.moveHistory = this.moveHistory.slice(0, this.historyIndex + 1);
-      this.moveHistory.push({ type: 'cubeZ', clockwise });
+      this.moveHistory.push({ type: 'cubeZ', clockwise: actualClockwise });
       this.historyIndex++;
     }
 
     // Update cube state
-    this.rotationLogic.updateCubeStateCubeZ(clockwise);
+    this.rotationLogic.updateCubeStateCubeZ(actualClockwise);
 
     // Call onMove callback
     if (this.onMove) {
@@ -619,7 +656,7 @@ export class RubiksCube {
     }
 
     this.animating = true;
-    const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
+    const angle = actualClockwise ? Math.PI / 2 : -Math.PI / 2;
     const cubelets = this.cubelets; // All cubelets
     const axis = ROTATION_AXES.Z;
 
@@ -675,6 +712,9 @@ export class RubiksCube {
    * Play rotation sound effect (optional)
    */
   private playRotationSound(): void {
+    // Don't play sound if the cube has been disposed
+    if (this.isDisposed) return;
+    
     // Check if sound is enabled via callback
     if (this.soundEnabledCallback && !this.soundEnabledCallback()) return;
     
@@ -833,32 +873,39 @@ export class RubiksCube {
    * Scrambles the cube with random moves
    */
   public async scramble(moves: number = 20): Promise<void> {
+    // Don't perform operations if cube has been disposed
+    if (this.isDisposed) return;
+    
     const faces = Object.keys(FACES) as Array<keyof typeof FACES>;
     const sliceMoves = ['middle', 'equator', 'standing'] as const;
     
-    for (let i = 0; i < moves; i++) {
-      const clockwise = Math.random() > 0.5;
-      
-      // Randomly choose between face turns and slice moves
-      if (Math.random() > 0.5) {
-        // Face turn
-        const randomFace = faces[Math.floor(Math.random() * faces.length)];
-        await this.rotateFace(randomFace, clockwise);
-      } else {
-        // Slice move
-        const randomSlice = sliceMoves[Math.floor(Math.random() * sliceMoves.length)];
-        switch (randomSlice) {
-          case 'middle':
-            await this.rotateMiddle(clockwise);
-            break;
-          case 'equator':
-            await this.rotateEquator(clockwise);
-            break;
-          case 'standing':
-            await this.rotateStanding(clockwise);
-            break;
+    // try {
+      for (let i = 0; i < moves; i++) {
+        // Don't continue if cube has been disposed during animation
+        if (this.isDisposed) return;
+        
+        const clockwise = Math.random() > 0.5;
+        
+        // Randomly choose between face turns and slice moves
+        if (Math.random() > 0.5) {
+          // Face turn
+          const randomFace = faces[Math.floor(Math.random() * faces.length)];
+          await this.rotateFace(randomFace, clockwise);
+        } else {
+          // Slice move
+          const randomSlice = sliceMoves[Math.floor(Math.random() * sliceMoves.length)];
+          switch (randomSlice) {
+            case 'middle':
+              await this.rotateMiddle(clockwise);
+              break;
+            case 'equator':
+              await this.rotateEquator(clockwise);
+              break;
+            case 'standing':
+              await this.rotateStanding(clockwise);
+              break;
+          }
         }
-      }
     }
   }
 
@@ -868,6 +915,15 @@ export class RubiksCube {
   public reset(): void {
     // Stop any ongoing animation first
     this.stopAnimation();
+    
+    // Get the current cube type before resetting
+    const cubeType = this.getCubeType();
+    
+    // Determine the proper size based on cube type
+    const properSize = cubeType === '2x2x2' ? 2 : 3;
+    
+    // Ensure CUBE_CONFIG has the right size for this cube type
+    CUBE_CONFIG.size = properSize;
     
     // Clear existing cubelets
     this.cubelets.forEach(cubelet => {
@@ -1035,6 +1091,41 @@ export class RubiksCube {
   public getCubelets(): Cubelet[] {
     return this.cubelets;
   }
+  
+  /**
+   * Rebuilds all cubelets with current colors
+   * This is useful when switching between regular colors and gradient themes
+   */
+  public rebuildCubelets(): void {
+    // Store current positions, colors and rotations
+    const currentState = this.cubelets.map(cubelet => ({
+      position: cubelet.position.clone(),
+      colors: [...cubelet.colors],
+      rotation: cubelet.getRotationQuaternion()
+    }));
+    
+    // Remove all current cubelets from the scene
+    this.cubelets.forEach(cubelet => {
+      this.cubeGroup.remove(cubelet.mesh);
+    });
+    
+    // Clear the cubelets array
+    this.cubelets = [];
+    
+    // Create new cubelets with the stored state
+    currentState.forEach(state => {
+      const cubelet = new Cubelet(state.position, state.colors);
+      
+      // Preserve the rotation of the cubelet
+      cubelet.applyRotation(state.rotation);
+      
+      this.cubelets.push(cubelet);
+      this.cubeGroup.add(cubelet.mesh);
+    });
+    
+    // Force update cube state after rebuilding
+    this.rotationLogic.updateCubeStateFromCubelets(this.cubelets);
+  }
 
   /**
    * Get current face orientation for labels
@@ -1070,10 +1161,7 @@ export class RubiksCube {
     // Store old colors for mapping
     const oldColors = { ...CUBE_CONFIG.colors };
     
-    // Update the config first
-    CUBE_CONFIG.colors = { ...newColors };
-    
-    // Create mapping from old colors to new colors
+    // Create mapping from old colors to new colors before updating config
     const colorMapping: { [oldColor: string]: string } = {};
     colorMapping[oldColors.top] = newColors.top;
     colorMapping[oldColors.bottom] = newColors.bottom;
@@ -1081,6 +1169,23 @@ export class RubiksCube {
     colorMapping[oldColors.right] = newColors.right;
     colorMapping[oldColors.front] = newColors.front;
     colorMapping[oldColors.back] = newColors.back;
+    
+    // Map colors on existing cubelets first
+    this.cubelets.forEach(cubelet => {
+      // Map each face color of the cubelet
+      cubelet.colors = cubelet.colors.map(color => {
+        // If it's an internal face (gray), keep it gray
+        if (color === '#333333') return color;
+        // Otherwise map to new color
+        return colorMapping[color] || color;
+      });
+    });
+    
+    // Update the config
+    CUBE_CONFIG.colors = { ...newColors };
+    
+    // Always rebuild cubelets when changing themes - simplest and most reliable approach
+    this.rebuildCubelets();
     
     // Update each cubelet by mapping its current colors to new colors
     this.cubelets.forEach(cubelet => {
@@ -1096,11 +1201,75 @@ export class RubiksCube {
       
       // Update mesh materials
       const mesh = cubelet.mesh.children[0] as THREE.Mesh;
-      if (mesh && mesh.material instanceof Array) {
-        for (let i = 0; i < 6; i++) {
-          const material = mesh.material[i] as THREE.MeshPhongMaterial;
-          material.color.setStyle(newColorsArray[i] || '#333333');
-          material.needsUpdate = true; // Force update
+      if (!mesh || !(mesh.material instanceof Array)) return;
+      
+      for (let i = 0; i < 6; i++) {
+        const color = newColorsArray[i] || '#333333';
+        const material = mesh.material[i] as THREE.MeshPhongMaterial;
+        
+        if (!material) continue;
+        
+        // Handle gradient colors
+        if (typeof color === 'string' && color.startsWith('linear-gradient')) {
+          // Create a canvas texture for gradient
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 256;
+          const ctx = canvas.getContext('2d');
+          
+          if (ctx) {
+            // Parse gradient colors - use simple two-color format
+            const gradientMatch = color.match(/linear-gradient\(([^,]+),\s*([^,]+),\s*([^)]+)\)/);
+            
+            if (gradientMatch) {
+              const direction = gradientMatch[1].trim();
+              const color1 = gradientMatch[2].trim();
+              const color2 = gradientMatch[3].trim();
+              
+              // Create gradient based on direction
+              let gradient;
+              if (direction.includes('45deg')) {
+                gradient = ctx.createLinearGradient(0, 0, 256, 256);
+              } else if (direction.includes('135deg')) {
+                gradient = ctx.createLinearGradient(0, 256, 256, 0);
+              } else if (direction.includes('to right')) {
+                gradient = ctx.createLinearGradient(0, 0, 256, 0);
+              } else if (direction.includes('to bottom')) {
+                gradient = ctx.createLinearGradient(0, 0, 0, 256);
+              } else {
+                gradient = ctx.createLinearGradient(0, 0, 0, 256); // default vertical
+              }
+              
+              // Add color stops
+              gradient.addColorStop(0, color1);
+              gradient.addColorStop(1, color2);
+              
+              // Fill the canvas with the gradient
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, 256, 256);
+              
+              // Create the texture
+              const texture = new THREE.CanvasTexture(canvas);
+              texture.needsUpdate = true;
+              texture.minFilter = THREE.LinearFilter;
+              texture.magFilter = THREE.LinearFilter;
+              
+              // Apply texture to material
+              material.map = texture;
+              material.color.setHex(0xFFFFFF); // Reset to white to show texture properly
+              material.needsUpdate = true;
+            } else {
+              // If parsing fails, use a default color
+              material.map = null;
+              material.color.setStyle('#333333'); // Default gray
+              material.needsUpdate = true;
+            }
+          }
+        } else {
+          // Regular solid color
+          material.map = null; // Remove any previous texture
+          material.color.setStyle(color);
+          material.needsUpdate = true;
         }
       }
     });
@@ -1214,5 +1383,43 @@ export class RubiksCube {
         }
       }
     });
+  }
+
+  /**
+   * Dispose of cube resources and remove from scene
+   */
+  public dispose(): void {
+    // Mark as disposed to stop any ongoing or future operations
+    this.isDisposed = true;
+    
+    // Stop any ongoing animations
+    this.stopAnimation();
+    
+    // Remove cube group from scene
+    if (this.scene && this.cubeGroup) {
+      this.scene.remove(this.cubeGroup);
+      
+      // Dispose of all materials and geometries
+      this.cubeGroup.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          if (obj.geometry) {
+            obj.geometry.dispose();
+          }
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach(material => material.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        }
+      });
+    }
+    
+    // Clear arrays
+    this.cubelets = [];
+    this.originalPositions = [];
+    this.moveHistory = [];
+    this.historyIndex = -1;
   }
 }

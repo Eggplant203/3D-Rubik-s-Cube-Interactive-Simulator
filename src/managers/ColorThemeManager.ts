@@ -79,6 +79,39 @@ export class ColorThemeManager {
       left: '#737373',    // Silver
       top: '#8c8c8c',     // Light silver
       bottom: '#a6a6a6'   // Pale silver
+    },
+    // Gradient themes using linear-gradient CSS - simplified format for better compatibility
+    gradientRainbow: {
+      front: 'linear-gradient(45deg, #ff0000, #ff8000)',   // Red-Orange
+      back: 'linear-gradient(45deg, #00ff00, #80ff00)',    // Green-Lime
+      right: 'linear-gradient(45deg, #0000ff, #8000ff)',   // Blue-Purple
+      left: 'linear-gradient(45deg, #ff8000, #ffff00)',    // Orange-Yellow
+      top: 'linear-gradient(45deg, #ffff00, #80ff00)',     // Yellow-Lime
+      bottom: 'linear-gradient(45deg, #ffffff, #f0f0f0)'   // White-LightGray
+    },
+    gradientNeon: {
+      front: 'linear-gradient(to right, #00ffff, #0080ff)',  // Cyan-Blue
+      back: 'linear-gradient(to right, #ff00ff, #ff0080)',   // Magenta-Pink
+      right: 'linear-gradient(to right, #ff0080, #ff0000)',  // Pink-Red
+      left: 'linear-gradient(to right, #80ff00, #00ff80)',   // Lime-GreenCyan
+      top: 'linear-gradient(to right, #ffff00, #ff8000)',    // Yellow-Orange
+      bottom: 'linear-gradient(to right, #ffffff, #e0e0e0)'  // White-LightGray
+    },
+    gradientCosmic: {
+      front: 'linear-gradient(to right, #0f2027, #2c5364)',          // Deep blue gradient 
+      back: 'linear-gradient(to right, #134e5e, #71b280)',           // Green-blue gradient
+      right: 'linear-gradient(to right, #8e0e00, #1f1c18)',          // Dark red gradient
+      left: 'linear-gradient(to right, #ff8008, #ffc837)',           // Orange-yellow gradient
+      top: 'linear-gradient(to right, #ffd200, #f7971e)',            // Bright yellow gradient
+      bottom: 'linear-gradient(to right, #ece9e6, #ffffff)'          // White gradient
+    },
+    gradientMetallic: {
+      front: 'linear-gradient(to right, #283048, #859398)',          // Steel blue
+      back: 'linear-gradient(to right, #3c3b3f, #605c3c)',           // Dark olive
+      right: 'linear-gradient(to right, #800000, #a52a2a)',          // Maroon to brown
+      left: 'linear-gradient(to right, #b79891, #94716b)',           // Rose brown
+      top: 'linear-gradient(to right, #bdc3c7, #d9d9d9)',            // Silver
+      bottom: 'linear-gradient(to right, #e6dada, #ffffff)'          // White smoke
     }
   };
 
@@ -93,7 +126,15 @@ export class ColorThemeManager {
     ocean: { name: 'Ocean', color: 0x006994, description: 'Deep ocean blue' },
     space: { name: 'Space', color: 0x191970, description: 'Cosmic midnight blue' },
     fire: { name: 'Fire', color: 0xdc143c, description: 'Fiery crimson' },
-    aurora: { name: 'Aurora', color: 0x9370db, description: 'Mystical aurora purple' }
+    aurora: { name: 'Aurora', color: 0x9370db, description: 'Mystical aurora purple' },
+    // Gradient themes
+    gradientSunrise: { name: 'Gradient Sunrise', color: 0xffa500, description: 'Orange to yellow gradient' },
+    gradientTwilight: { name: 'Gradient Twilight', color: 0x4b0082, description: 'Deep purple to dark blue gradient' },
+    gradientOcean: { name: 'Gradient Ocean', color: 0x00bfff, description: 'Light blue to deep blue gradient' },
+    gradientForest: { name: 'Gradient Forest', color: 0x006400, description: 'Light green to dark green gradient' },
+    gradientFire: { name: 'Gradient Fire', color: 0xff4500, description: 'Orange to red gradient' },
+    gradientCosmic: { name: 'Gradient Cosmic', color: 0x663399, description: 'Purple to black with starry effect' },
+    gradientNeon: { name: 'Gradient Neon', color: 0x39ff14, description: 'Vibrant neon color gradient' }
   };
 
   private constructor() {}

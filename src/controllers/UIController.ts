@@ -4,6 +4,9 @@ import { SceneManager } from '../core/SceneManager';
 import { KeyboardController, InputManager } from './InputManager';
 import { CubeStateManager } from '../services/CubeStateManager';
 import { CUBE_CONFIG } from '../config/constants';
+import { CubeTypeManager } from '../managers/CubeTypeManager';
+import { CubeConfigurationFactory } from '../config/CubeConfigurationFactory';
+import { ColorThemeManager } from '../managers/ColorThemeManager';
 
 /**
  * UI Controller - Manages all UI interactions and states
@@ -12,6 +15,7 @@ export class UIController {
   private cube: RubiksCube;
   private sceneManager: SceneManager;
   private keyboardController: KeyboardController;
+  private cubeTypeManager: CubeTypeManager;
   private isTimerRunning = false;
   private timerStartTime = 0;
   private timerInterval: number | null = null;
@@ -297,6 +301,7 @@ export class UIController {
   constructor(cube: RubiksCube, sceneManager: SceneManager, inputManager?: InputManager) {
     this.cube = cube;
     this.sceneManager = sceneManager;
+    this.cubeTypeManager = CubeTypeManager.getInstance();
     this.inputManager = inputManager || null;
     // Get keyboard controller from input manager if available
     if (this.inputManager) {
@@ -307,6 +312,51 @@ export class UIController {
     }
     this.notificationSystem = new NotificationSystem();
     this.cubeStateManager = new CubeStateManager(cube);
+    
+    // Initialize CubeTypeManager
+    this.cubeTypeManager.initialize(sceneManager, cube, this.notificationSystem);
+    
+    // Subscribe to cube changes
+    this.cubeTypeManager.onCubeChange((newCube, config) => {
+      this.cube = newCube;
+      this.cubeStateManager = new CubeStateManager(newCube);
+      this.cubeStateManager.setColorTheme(this.currentColorTheme);
+      
+      // Update input manager with new cube
+      if (this.inputManager) {
+        // Update the input manager with the new cube
+        this.inputManager.updateCube(newCube);
+        this.keyboardController = this.inputManager.getKeyboardController()!;
+        
+        // Apply custom key mappings to the new keyboard controller
+        if (this.customKeyMappings) {
+          this.keyboardController.setKeyMappings(this.customKeyMappings);
+        }
+      }
+      
+      // Update callbacks for new cube
+      newCube.soundEnabledCallback = () => this.soundEnabled;
+      
+      // Set onMove callback to update move counter for the new cube
+      newCube.onMove = () => {
+        this.handleCubeMove();
+      };
+      
+      // Set onSolveComplete callback for the new cube
+      newCube.onSolveComplete = () => {
+        this.handleCubeSolved();
+      };
+      
+      // Update scramble steps based on configuration
+      if (config.scrambleSteps) {
+        this._scrambleSteps = config.scrambleSteps;
+        if (this.elements.options.scrambleSteps) {
+          this.elements.options.scrambleSteps.value = config.scrambleSteps.toString();
+        }
+      }
+      
+      this.updateUI();
+    });
     
     // Set sound callback for cube
     this.cube.soundEnabledCallback = () => this.soundEnabled;
@@ -406,8 +456,12 @@ export class UIController {
       const input = e.target as HTMLInputElement;
       const value = parseInt(input.value);
       if (!input.value || input.value.trim() === '' || value < 1) {
-        input.value = '25';
-        this._scrambleSteps = 25;
+        // Get default scramble steps for current cube
+        const currentCube = this.cubeTypeManager.getCurrentCube();
+        const defaultScrambleSteps = this.getDefaultScrambleStepsForCube(currentCube);
+        
+        input.value = defaultScrambleSteps.toString();
+        this._scrambleSteps = defaultScrambleSteps;
         this.saveSettings();
       } else {
         // Check if we need to show warning when scramble steps become too low
@@ -431,12 +485,16 @@ export class UIController {
     });
 
     this.elements.options.resetScrambleSteps?.addEventListener('click', () => {
-      this._scrambleSteps = 25;
+      // Get the default scramble steps for the current cube type
+      const currentCube = this.cubeTypeManager.getCurrentCube();
+      let defaultScrambleSteps = this.getDefaultScrambleStepsForCube(currentCube);
+      
+      this._scrambleSteps = defaultScrambleSteps;
       if (this.elements.options.scrambleSteps) {
-        this.elements.options.scrambleSteps.value = '25';
+        this.elements.options.scrambleSteps.value = defaultScrambleSteps.toString();
       }
       this.saveSettings();
-      // No need to show warning since we're resetting to 25
+      // No need to show warning since we're resetting to the default value
     });
 
     // Show clock option
@@ -447,9 +505,9 @@ export class UIController {
     });
 
     // Appearance controls
-    this.elements.appearance.cubeSize.addEventListener('change', (e) => {
+    this.elements.appearance.cubeSize.addEventListener('change', async (e) => {
       const size = parseInt((e.target as HTMLSelectElement).value);
-      this.handleCubeSizeChange(size);
+      await this.handleCubeSizeChange(size);
     });
     
     this.elements.appearance.animationSpeed.addEventListener('change', (e) => {
@@ -577,27 +635,27 @@ export class UIController {
     });
     
     this.elements.rotation.rotateCubeX?.addEventListener('click', async () => {
-      await this.cube.rotateCubeX(true);
+      await this.handleCubeRotationX(true);
     });
     
     this.elements.rotation.rotateCubeXPrime?.addEventListener('click', async () => {
-      await this.cube.rotateCubeX(false);
+      await this.handleCubeRotationX(false);
     });
     
     this.elements.rotation.rotateCubeY?.addEventListener('click', async () => {
-      await this.cube.rotateCubeY(true);
+      await this.handleCubeRotationY(true);
     });
     
     this.elements.rotation.rotateCubeYPrime?.addEventListener('click', async () => {
-      await this.cube.rotateCubeY(false);
+      await this.handleCubeRotationY(false);
     });
     
     this.elements.rotation.rotateCubeZ?.addEventListener('click', async () => {
-      await this.cube.rotateCubeZ(true);
+      await this.handleCubeRotationZ(true);
     });
     
     this.elements.rotation.rotateCubeZPrime?.addEventListener('click', async () => {
-      await this.cube.rotateCubeZ(false);
+      await this.handleCubeRotationZ(false);
     });
 
     // Sequence Input
@@ -827,8 +885,14 @@ export class UIController {
       const parsed = JSON.parse(settings);
       this.soundEnabled = parsed.soundEnabled ?? true;
       this.panelCollapsed = parsed.panelCollapsed ?? false;
-      this._scrambleSteps = parsed.scrambleSteps ?? 25;
+      
+      // Get current cube type to determine correct default scramble steps
+      const currentCube = this.cubeTypeManager.getCurrentCube();
+      const defaultScrambleSteps = this.getDefaultScrambleStepsForCube(currentCube);
+      
+      this._scrambleSteps = parsed.scrambleSteps ?? defaultScrambleSteps;
       this.showClock = parsed.showClock ?? true;
+      
       // Load custom key mappings
       this.customKeyMappings = parsed.customKeyMappings ?? this.customKeyMappings;
       
@@ -846,6 +910,12 @@ export class UIController {
       if (this.elements.options.showClock) {
         this.elements.options.showClock.checked = this.showClock;
       }
+      
+      // Ensure cube size selector matches the actual cube
+      this.updateCubeSizeSelector();
+      
+      // Ensure scramble steps matches the current cube type
+      this.updateScrambleStepsInput();
       
       // Load appearance settings
       this.elements.appearance.colorTheme.value = parsed.colorTheme ?? 'classic';
@@ -1038,7 +1108,10 @@ export class UIController {
    * Handle scramble
    */
   private async handleScramble(): Promise<void> {
-    if (this.cube.isAnimating()) {
+    // Get the current active cube
+    const currentCube = this.getCurrentCube();
+    
+    if (currentCube.isAnimating()) {
       this.notificationSystem.error('Cube is currently rotating. Please wait for the animation to complete.');
       return;
     }
@@ -1047,7 +1120,10 @@ export class UIController {
       this.stopTimer();
     }
     
-    await this.cube.scramble(this._scrambleSteps);
+    // Do not reset move counter before scrambling
+    // Keep the move count intact
+    
+    await currentCube.scramble(this._scrambleSteps);
     this.playSound('scramble');
     this.notificationSystem.info('Cube scrambled!');
     
@@ -1073,55 +1149,59 @@ export class UIController {
       this.stopTimer();
     }
     
-    // Stop any ongoing animation before resetting
-    this.cube.stopAnimation();
+    // Get the current active cube
+    const currentCube = this.getCurrentCube();
     
-    this.cube.reset();
+    // Store current scramble steps to preserve them
+    const currentScrambleSteps = this._scrambleSteps;
+    
+    // Stop any ongoing animation before resetting
+    currentCube.stopAnimation();
+    
+    // Get current cube type before resetting
+    const cubeType = currentCube.getCubeType();
+    
+    currentCube.reset();
     this.moveCount = 0;
     this.updateMoveCounter();
     this.resetTimer();
     this.elements.appearance.blindfoldMode.checked = false;
     this.toggleBlindfoldMode(false);
     
+    // Make sure UI is updated completely after reset
+    this.updateUI();
+    
+    // Get cube type after reset to verify it's still the same
+    const newCubeType = this.cube.getCubeType();
+    if (cubeType !== newCubeType) {
+      console.warn(`Cube type changed during reset from ${cubeType} to ${newCubeType}`);
+      
+      // Force update cube size selector to match the current cube
+      this.updateCubeSizeSelector();
+      
+      // Don't update scramble steps - keep user's selected value
+    }
+    
+    // Restore the scramble steps to their previous value
+    this._scrambleSteps = currentScrambleSteps;
+    if (this.elements.options.scrambleSteps) {
+      this.elements.options.scrambleSteps.value = currentScrambleSteps.toString();
+    }
+    
     this.playSound('reset');
     this.notificationSystem.info('Cube reset to solved state');
   }
 
-  /**
-   * Handle keyboard scramble (space key)
-   */
-  public async handleKeyboardScramble(): Promise<void> {
-    if (this.cube.isAnimating()) {
-      return; // Don't show notification for keyboard input to avoid spam
-    }
-
-    if (this.currentMode === 'timer' && this.isTimerRunning) {
-      this.stopTimer();
-    }
-    
-    await this.cube.scramble(this._scrambleSteps);
-    this.playSound('scramble');
-    this.notificationSystem.info('Cube scrambled!');
-    
-    // Auto start timer after scramble is complete in timer mode
-    if (this.currentMode === 'timer' && !this.isTimerRunning) {
-      this.startTimer();
-    }
-
-    // Switch to statistics tab if in timer mode and not already on statistics tab
-    if (this.currentMode === 'timer') {
-      const activeTab = document.querySelector('.tab-btn.active') as HTMLElement;
-      if (activeTab && activeTab.dataset.tab !== 'statistics') {
-        this.switchTab('statistics');
-      }
-    }
-  }
+  // Space bar scramble functionality was removed from here
 
   /**
    * Handle solve
    */
   private handleSolve(): void {
-    if (this.cube.isAnimating()) {
+    // Get the current active cube
+    const currentCube = this.getCurrentCube();
+    
+    if (currentCube.isAnimating()) {
       this.notificationSystem.error('Cube is currently rotating. Please wait for the animation to complete.');
       return;
     }
@@ -1137,7 +1217,7 @@ export class UIController {
       this.stopTimer();
     }
     
-    this.cube.solve();
+    currentCube.solve();
     this.playSound('solve');
     this.notificationSystem.success('Cube auto-solved!');
   }
@@ -1166,11 +1246,31 @@ export class UIController {
       return;
     }
 
+    // For 2x2 cubes, validate that no middle layer or wide moves are used
+    if (this.is2x2Cube()) {
+      // Check for middle layer moves (M, E, S) and wide moves (lowercase or with 'w')
+      const invalidMoves2x2 = /[mes]|[rufbld]w/i;
+      if (invalidMoves2x2.test(sequence)) {
+        this.showSequenceFeedback('Invalid moves for 2x2 cube. Middle layer (M, E, S) and wide moves (e.g., r, u, Rw) are not supported on 2x2 cubes.', 'error');
+        return;
+      }
+    }
+
     // Parse and validate sequence
     const moves = this.parseSequence(sequence);
     if (!moves) {
       this.showSequenceFeedback('Invalid sequence syntax', 'error');
       return;
+    }
+
+    // Additional validation for 2x2 cubes - check for invalid moves
+    if (this.is2x2Cube()) {
+      const invalidMove = moves.find(move => move.invalid2x2);
+      
+      if (invalidMove) {
+        this.showSequenceFeedback('Invalid move for 2x2 cube. Middle layer moves (M, E, S) and wide moves (r, u, Rw, etc.) are not supported on 2x2 cubes.', 'error');
+        return;
+      }
     }
 
     if (this.currentMode === 'timer' && this.isTimerRunning) {
@@ -1198,8 +1298,8 @@ export class UIController {
   /**
    * Parse sequence string into moves
    */
-  private parseSequence(sequence: string): Array<{type: string, face?: string, clockwise: boolean, repetition?: number}> | null {
-    const moves: Array<{type: string, face?: string, clockwise: boolean, double?: boolean}> = [];
+  private parseSequence(sequence: string): Array<{type: string, face?: string, clockwise: boolean, repetition?: number, invalid2x2?: boolean}> | null {
+    const moves: Array<{type: string, face?: string, clockwise: boolean, double?: boolean, invalid2x2?: boolean}> = [];
     let processedSequence = sequence;
 
     // Replace grouped moves with repetition for both () and []
@@ -1225,6 +1325,8 @@ export class UIController {
     if (tokens.length === 0 || (tokens.length === 1 && !tokens[0])) {
       return null;
     }
+    
+    // We'll check if this is a 2x2 cube in the parsing logic
 
     for (const token of tokens) {
       if (!token) continue;
@@ -1250,6 +1352,12 @@ export class UIController {
         if (!doubleMove) {
           return null; // Invalid double layer move
         }
+        
+        // Mark double layer moves as invalid for 2x2 cubes
+        if (this.is2x2Cube()) {
+          doubleMove.invalid2x2 = true;
+        }
+        
         moves.push(doubleMove);
         continue;
       }
@@ -1291,6 +1399,11 @@ export class UIController {
       } else if (validMiddle.includes(notation)) {
         move.type = 'middle';
         move.face = notation;
+        
+        // Mark middle layer moves as invalid for 2x2 cubes
+        if (this.is2x2Cube()) {
+          move.invalid2x2 = true;
+        }
       } else if (validCube.includes(notation)) {
         move.type = 'cube';
         move.face = notation;
@@ -1307,7 +1420,7 @@ export class UIController {
   /**
    * Create a double layer move object
    */
-  private createDoubleLayerMove(token: string): {type: string, face?: string, clockwise: boolean, repetition?: number} | null {
+  private createDoubleLayerMove(token: string): {type: string, face?: string, clockwise: boolean, repetition?: number, invalid2x2?: boolean} | null {
     // Extract base notation, prime, and repetition
     let baseNotation = token.replace(/['\d]+$/, '');
     const isPrime = token.includes("'");
@@ -1378,9 +1491,12 @@ export class UIController {
       const middlePrime = move.clockwise ? (middleClockwise ? '' : "'") : (!middleClockwise ? '' : "'");
       const fullMiddleNotation = middleNotation + middlePrime;
 
+      // Get the current active cube
+      const currentCube = this.getCurrentCube();
+      
       // Temporarily disable onMove to prevent double counting
-      const originalOnMove = this.cube.onMove;
-      this.cube.onMove = undefined;
+      const originalOnMove = currentCube.onMove;
+      currentCube.onMove = undefined;
 
       for (let i = 0; i < repetition; i++) {
         // Execute face move
@@ -1391,7 +1507,7 @@ export class UIController {
       }
 
       // Restore onMove
-      this.cube.onMove = originalOnMove;
+      currentCube.onMove = originalOnMove;
 
       // Manually increase moveCount by the repetition count
       this.moveCount += repetition;
@@ -1466,7 +1582,10 @@ export class UIController {
     }
   }
   private async handleUndo(): Promise<void> {
-    const success = await this.cube.undo();
+    // Get the current active cube
+    const currentCube = this.getCurrentCube();
+    
+    const success = await currentCube.undo();
     if (success) {
       this.moveCount = Math.max(0, this.moveCount - 1);
       this.updateMoveCounter();
@@ -1477,7 +1596,10 @@ export class UIController {
    * Handle redo
    */
   private async handleRedo(): Promise<void> {
-    const success = await this.cube.redo();
+    // Get the current active cube
+    const currentCube = this.getCurrentCube();
+    
+    const success = await currentCube.redo();
     if (success) {
       this.moveCount++;
       this.updateMoveCounter();
@@ -1830,8 +1952,18 @@ export class UIController {
   /**
    * Handle appearance settings
    */
-  private handleCubeSizeChange(_size: number): void {
-    this.notificationSystem.show('Cube size change not yet implemented', 'info');
+  private async handleCubeSizeChange(size: number): Promise<void> {
+    try {
+      const success = await this.cubeTypeManager.switchToCubeSize(size);
+      if (success) {
+        // Automatically reset the cube when cube size is changed
+        this.cubeTypeManager.resetCube();
+        this.saveSettings();
+      }
+    } catch (error) {
+      console.error('Error changing cube size:', error);
+      this.notificationSystem.show('Failed to change cube size', 'error');
+    }
   }
 
   private handleAnimationSpeedChange(speed: string): void {
@@ -1861,6 +1993,10 @@ export class UIController {
     // Update CubeStateManager with current theme
     this.cubeStateManager.setColorTheme(theme);
     
+    // Update ColorThemeManager to ensure consistent theme when switching cube sizes
+    const colorThemeManager = CubeTypeManager.getInstance().getColorThemeManager();
+    colorThemeManager.setCurrentColorTheme(theme);
+    
     let colors: typeof CUBE_CONFIG.colors;
     
     if (theme === 'random') {
@@ -1868,7 +2004,15 @@ export class UIController {
       // Show the generate random button when random theme is selected
       this.elements.appearance.generateRandomBtn.style.display = 'block';
     } else {
-      colors = this.colorThemes[theme as keyof typeof this.colorThemes];
+      // For gradient themes, get colors from ColorThemeManager
+      if (theme.startsWith('gradient')) {
+        const themeManager = ColorThemeManager.getInstance();
+        const themeColors = themeManager.getColorScheme(theme);
+        colors = themeColors || this.colorThemes['classic'];
+      } else {
+        // Regular theme from built-in colorThemes
+        colors = this.colorThemes[theme as keyof typeof this.colorThemes] || this.colorThemes['classic'];
+      }
       // Hide the generate random button for other themes
       this.elements.appearance.generateRandomBtn.style.display = 'none';
     }
@@ -1964,6 +2108,71 @@ export class UIController {
     this.updateModeUI();
     this.updateTimerToggleButton();
     this.updateButtonStatesForTimer();
+    this.updateCubeSizeSelector();
+    this.updateScrambleStepsInput();
+  }
+  
+  /**
+   * Get default scramble steps for a given cube type
+   */
+  private getDefaultScrambleStepsForCube(cube: RubiksCube | null): number {
+    if (!cube) return 25; // Default to 3x3x3 if no cube
+    
+    const cubeType = cube.getCubeType();
+    
+    // Parse cube size from type
+    const size = parseInt(cubeType, 10);
+    if (!isNaN(size)) {
+      // Use the centralized method from CubeConfigurationFactory
+      return CubeConfigurationFactory.getDefaultScrambleSteps(size);
+    }
+    
+    return 25; // Fallback to 3x3x3 default
+  }
+
+  /**
+   * Update scramble steps input to match current cube configuration
+   */
+  private updateScrambleStepsInput(): void {
+    if (this.elements.options.scrambleSteps) {
+      const currentCube = this.cubeTypeManager.getCurrentCube();
+      const scrambleSteps = this.getDefaultScrambleStepsForCube(currentCube);
+      
+      // Update UI and internal value
+      this._scrambleSteps = scrambleSteps;
+      this.elements.options.scrambleSteps.value = scrambleSteps.toString();
+      
+      // Also update the settings manager
+      const settingsManager = this.cubeTypeManager.getSettingsManager();
+      if (settingsManager) {
+        settingsManager.set('scrambleSteps', scrambleSteps);
+      }
+    }
+  }
+  
+  /**
+   * Update cube size selector to match current cube type
+   */
+  private updateCubeSizeSelector(): void {
+    if (this.elements.appearance.cubeSize) {
+      const currentCube = this.cubeTypeManager.getCurrentCube();
+      if (currentCube) {
+        const cubeType = currentCube.getCubeType();
+        // Determine size from cube type
+        const size = cubeType === '2x2x2' ? 2 : cubeType === '3x3x3' ? 3 : parseInt(cubeType, 10);
+        
+        // Update the cube size selector to match the actual cube displayed
+        if (size && !isNaN(size) && this.elements.appearance.cubeSize.value !== size.toString()) {
+          this.elements.appearance.cubeSize.value = size.toString();
+          
+          // Also update the settings manager to match the actual cube
+          const settingsManager = this.cubeTypeManager.getSettingsManager();
+          if (settingsManager) {
+            settingsManager.set('cubeSize', size);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -2010,22 +2219,65 @@ export class UIController {
   }
 
   /**
+   * Get current active cube from CubeTypeManager
+   */
+  private getCurrentCube(): RubiksCube {
+    return this.cubeTypeManager.getCurrentCube() || this.cube;
+  }
+
+  /**
+   * Check if current cube is a 2x2x2 cube
+   */
+  private is2x2Cube(): boolean {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '2x2x2';
+  }
+
+  /**
    * Helper method to handle face rotation with error handling
+   * Direction handling is now managed by each cube type through DirectionHandler
    */
   private async handleFaceRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
     try {
-      await this.cube.rotateFace(face, clockwise);
+      const currentCube = this.getCurrentCube();
+      
+      if (!currentCube) return;
+      
+      // Each cube type now handles its own direction conversion internally
+      await currentCube.rotateFace(face, clockwise);
+      
+      // Always increment moves count - we need to track all moves
+      this.moveCount++;
+      this.updateMoveCounter();
+      
+      // Play sound
+      this.playSound('move');
     } catch (error) {
+      console.error("Error rotating face:", error);
     }
   }
+  
+
 
   /**
    * Helper method to handle middle layer rotation with error handling
    */
   private async handleMiddleRotation(clockwise: boolean): Promise<void> {
     try {
-      await this.cube.rotateMiddle(clockwise);
+      // Check if it's a 2x2 cube
+      if (this.is2x2Cube()) {
+        this.notificationSystem.show('Middle layer rotation not available on 2x2 cube', 'info');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube();
+      await currentCube.rotateMiddle(clockwise);
+      
+      // Increment move counter
+      this.moveCount++;
+      this.updateMoveCounter();
     } catch (error) {
+      console.error("Error rotating middle layer:", error);
     }
   }
 
@@ -2034,8 +2286,20 @@ export class UIController {
    */
   private async handleEquatorRotation(clockwise: boolean): Promise<void> {
     try {
-      await this.cube.rotateEquator(clockwise);
+      // Check if it's a 2x2 cube
+      if (this.is2x2Cube()) {
+        this.notificationSystem.show('Equator rotation not available on 2x2 cube', 'info');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube();
+      await currentCube.rotateEquator(clockwise);
+      
+      // Increment move counter
+      this.moveCount++;
+      this.updateMoveCounter();
     } catch (error) {
+      console.error("Error rotating equator layer:", error);
     }
   }
 
@@ -2067,15 +2331,23 @@ export class UIController {
     }
 
     try {
-      const success = this.cubeStateManager.loadFromLocalStorage();
-      if (success) {
-        this.notificationSystem.show('Cube state loaded successfully!', 'success');
-        // Reset move count when loading a state
-        this.moveCount = 0;
-        this.updateUI();
-      } else {
-        this.notificationSystem.show('Failed to load cube state.', 'error');
-      }
+
+      // Handle async loadFromLocalStorage
+      this.cubeStateManager.loadFromLocalStorage()
+        .then(success => {
+          if (success) {
+              this.notificationSystem.show('Cube state loaded successfully!', 'success');
+            // Reset move count when loading a state
+            this.moveCount = 0;
+            this.updateUI();
+          } else {
+            this.notificationSystem.show('Failed to load cube state.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error loading from localStorage:', error);
+          this.notificationSystem.show('Failed to load cube state.', 'error');
+        });
     } catch (error) {
       this.notificationSystem.show('Failed to load cube state.', 'error');
     }
@@ -2114,6 +2386,10 @@ export class UIController {
             this.notificationSystem.show('Cube state imported successfully!', 'success');
             // Reset move count when importing a state
             this.moveCount = 0;
+            
+            // Update the UI to reflect potential cube size/type change
+            this.updateCubeSizeSelector();
+            this.updateScrambleStepsInput();
             this.updateUI();
           })
           .catch((error) => {
@@ -2129,8 +2405,74 @@ export class UIController {
    */
   private async handleStandingRotation(clockwise: boolean): Promise<void> {
     try {
-      await this.cube.rotateStanding(clockwise);
+      // Check if it's a 2x2 cube
+      if (this.is2x2Cube()) {
+        this.notificationSystem.show('Standing rotation not available on 2x2 cube', 'info');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube();
+      await currentCube.rotateStanding(clockwise);
+      
+      // Increment move counter
+      this.moveCount++;
+      this.updateMoveCounter();
     } catch (error) {
+      console.error("Error rotating standing layer:", error);
+    }
+  }
+  
+  /**
+   * Helper method to handle cube X rotation
+   * Direction handling is now managed by each cube type through DirectionHandler
+   */
+  private async handleCubeRotationX(clockwise: boolean): Promise<void> {
+    try {
+      const currentCube = this.getCurrentCube();
+      
+      // Each cube type now handles its own direction conversion internally
+      await currentCube.rotateCubeX(clockwise);
+      
+      // Play move sound (cube rotations don't increase move counter)
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating cube X:", error);
+    }
+  }
+  
+  /**
+   * Helper method to handle cube Y rotation
+   * Direction handling is now managed by each cube type through DirectionHandler
+   */
+  private async handleCubeRotationY(clockwise: boolean): Promise<void> {
+    try {
+      const currentCube = this.getCurrentCube();
+      
+      // Each cube type now handles its own direction conversion internally
+      await currentCube.rotateCubeY(clockwise);
+      
+      // Play move sound (cube rotations don't increase move counter)
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating cube Y:", error);
+    }
+  }
+  
+  /**
+   * Helper method to handle cube Z rotation
+   * Direction handling is now managed by each cube type through DirectionHandler
+   */
+  private async handleCubeRotationZ(clockwise: boolean): Promise<void> {
+    try {
+      const currentCube = this.getCurrentCube();
+      
+      // Each cube type now handles its own direction conversion internally
+      await currentCube.rotateCubeZ(clockwise);
+      
+      // Play move sound (cube rotations don't increase move counter)
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating cube Z:", error);
     }
   }
 

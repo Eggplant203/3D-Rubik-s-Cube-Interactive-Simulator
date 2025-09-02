@@ -257,6 +257,33 @@ export class SceneManager {
    * Update background color/theme
    */
   public updateBackground(theme: string): void {
+    // Remove any previous gradient background classes from container's parent
+    const container = this.renderer.domElement.parentElement;
+    if (container) {
+      const parent = container.parentElement;
+      if (parent) {
+        // Remove existing background classes
+        const classesToRemove = Array.from(parent.classList).filter(c => 
+          c.startsWith('background-gradient'));
+        classesToRemove.forEach(c => parent.classList.remove(c));
+      }
+    }
+    
+    // Apply gradient backgrounds using CSS for gradient themes
+    if (theme.startsWith('gradient')) {
+      const container = this.renderer.domElement.parentElement;
+      if (container) {
+        const parent = container.parentElement;
+        if (parent) {
+          parent.classList.add(`background-${theme}`);
+          // Set renderer to transparent for CSS gradients to show through
+          this.renderer.setClearColor(0x000000, 0);
+          return;
+        }
+      }
+    }
+    
+    // For regular color backgrounds, use the renderer's clear color
     switch (theme) {
       case 'dark':
         this.renderer.setClearColor(0x2a2a2a, 1);
@@ -267,9 +294,7 @@ export class SceneManager {
       case 'blue':
         this.renderer.setClearColor(0x1e3a5f, 1);
         break;
-      case 'gradient':
-        // For gradient, we'll use a solid color for now
-        // In a more advanced implementation, we could use a custom shader
+      case 'gradient': // Fallback if the CSS method fails
         this.renderer.setClearColor(0x4a90e2, 1);
         break;
       case 'sunset':

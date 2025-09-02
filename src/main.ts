@@ -1,9 +1,13 @@
 import './style.css';
 import './ui-enhancements.css';
+import './gradient-backgrounds.css';
 import { SceneManager } from './core/SceneManager';
 import { RubiksCube } from './core/RubiksCube';
+import { RubiksCube2x2 } from './core/RubiksCube2x2';
 import { InputManager } from './controllers/InputManager';
 import { UIController } from './controllers/UIController';
+import { SettingsManager } from './managers/SettingsManager';
+import { CubeTypeManager } from './managers/CubeTypeManager';
 
 /**
  * Main application class
@@ -32,18 +36,38 @@ class RubikApp {
       // Initialize scene manager
       this.sceneManager = new SceneManager(this.container);
       
-      // Initialize Rubik's cube
-      this.rubiksCube = new RubiksCube(this.sceneManager.getScene());
+      // Get settings manager to check the initial cube size
+      const settingsManager = SettingsManager.getInstance();
+      const cubeSize = settingsManager.get('cubeSize');
+      
+      // Ensure cubeSize is saved to localStorage
+      settingsManager.set('cubeSize', cubeSize);
+      
+      // Create appropriate cube based on settings and ensure settings are saved
+      if (cubeSize === 2) {
+        this.rubiksCube = new RubiksCube2x2(this.sceneManager.getScene());
+        // Explicitly set cube size to 2 to ensure consistency
+        settingsManager.set('cubeSize', 2);
+      } else {
+        this.rubiksCube = new RubiksCube(this.sceneManager.getScene());
+        // Explicitly set cube size to 3 to ensure consistency
+        settingsManager.set('cubeSize', 3);
+      }
       
       // Initialize input manager for cube rotation
-      this.inputManager = new InputManager(this.rubiksCube);
-      
-      // Initialize UI controller
-      this.uiController = new UIController(this.rubiksCube, this.sceneManager, this.inputManager);
+      if (this.rubiksCube && this.sceneManager) {
+        this.inputManager = new InputManager(this.rubiksCube);
+        
+        // Initialize UI controller - this will set up the cube type manager properly
+        this.uiController = new UIController(this.rubiksCube, this.sceneManager, this.inputManager);
+      } else {
+        throw new Error('Failed to initialize cube or scene');
+      }
       
       // Set UIController reference in InputManager
       this.inputManager.setUIController(this.uiController);
       
+      // Enable input handling
       this.inputManager.enable();
       
       // Start render loop
@@ -118,6 +142,9 @@ class RubikApp {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+  // Make CubeTypeManager globally available for cross-component communication
+  (window as any).CubeTypeManager = CubeTypeManager;
+  
   const app = new RubikApp();
   
   try {

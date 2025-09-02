@@ -6,8 +6,8 @@ import * as THREE from 'three';
 export const CUBE_CONFIG = {
   size: 3, // Default size for backward compatibility
   dimensions: { width: 3, height: 3, depth: 3 }, // Dimensions for non-square cubes
-  cubeSize: 2,
-  spacing: 0.1,
+  cubeSize: 1.7, // Reduced from 2 to be more compact
+  spacing: 0.02, // Reduced from 0.1 to be consistent with 2x2,
   positionOffset: new THREE.Vector3(0, 0, 0),  // Offset to adjust cube position (raise higher)
   colors: {
     front: '#3366ff',   // Blue
@@ -60,3 +60,38 @@ export const ROTATION_AXES = {
   Y: new THREE.Vector3(0, 1, 0),
   Z: new THREE.Vector3(0, 0, 1)
 } as const;
+
+/**
+ * Standardized configuration values for different cube types
+ * This ensures consistent cubelet sizes and spacing across the application
+ */
+export const STANDARD_CUBE_CONFIGS = {
+  '2x2x2': {
+    cubeSize: 1.5,  // Slightly smaller cubelet for 2x2
+    spacing: 0.02   // Minimal spacing between cubelets
+  },
+  '3x3x3': {
+    cubeSize: 1.7,  // Standard cubelet size
+    spacing: 0.02   // Standard spacing
+  }
+};
+
+/**
+ * Standardize cube configuration based on cube type
+ * This ensures that all cubes of the same type have consistent dimensions
+ * @param cubeType The type of cube (2x2x2, 3x3x3, etc.)
+ */
+export function standardizeCubeConfig(cubeType: string): void {
+  if (cubeType === '2x2x2') {
+    CUBE_CONFIG.size = 2;
+    CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['2x2x2'].cubeSize;
+    CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['2x2x2'].spacing;
+  } else if (cubeType === '3x3x3') {
+    CUBE_CONFIG.size = 3;
+    CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['3x3x3'].cubeSize;
+    CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['3x3x3'].spacing;
+  }
+  // Additional cube types can be added here
+  
+  console.log(`Standardized config for ${cubeType}: size=${CUBE_CONFIG.size}, cubeSize=${CUBE_CONFIG.cubeSize}, spacing=${CUBE_CONFIG.spacing}`);
+}

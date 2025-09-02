@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { standardizeCubeConfig } from './constants';
 
 /**
  * Configuration for different cube sizes and types
@@ -111,6 +112,9 @@ export class CubeConfigurationFactory {
     // Adjust animation duration for larger cubes
     config.animation.transitionDuration = this.calculateAnimationDuration(size);
     
+    // Standardize the cube configuration
+    standardizeCubeConfig(size === 2 ? '2x2x2' : '3x3x3');
+    
     return config;
   }
 
@@ -202,8 +206,8 @@ export class CubeConfigurationFactory {
   private static calculateOptimalCubeSize(size: number): number {
     // Smaller individual cubelets for larger cubes
     const sizeMap: { [key: number]: number } = {
-      2: 2.5,
-      3: 2.0,
+      2: 1.5,  // Reduced from 2.5 to make 2x2 cube more compact
+      3: 1.7,  // Reduced from 2.0 to make 3x3 cube more compact
       4: 1.7,
       5: 1.5,
       6: 1.3,
@@ -219,8 +223,8 @@ export class CubeConfigurationFactory {
   private static calculateOptimalSpacing(size: number): number {
     // Smaller spacing for larger cubes to keep them visually compact
     const spacingMap: { [key: number]: number } = {
-      2: 0.15,
-      3: 0.1,
+      2: 0.02,  // Reduced from 0.15 to make 2x2 cube more compact
+      3: 0.02,  // Reduced from 0.1 to make 3x3 cube more compact, consistent with 2x2
       4: 0.08,
       5: 0.06,
       6: 0.05,
@@ -241,13 +245,33 @@ export class CubeConfigurationFactory {
   }
 
   /**
+   * Calculate recommended scramble steps for a given cube size
+   * Public method that can be used by other classes to get consistent scramble steps
+   */
+  public static getDefaultScrambleSteps(size: number): number {
+    switch(size) {
+      case 2:
+        return 15; // Default for 2x2x2
+      case 3:
+        return 25; // Default for 3x3x3
+      case 4:
+        return 35; // Default for 4x4x4
+      case 5:
+        return 50; // Default for 5x5x5
+      default:
+        // For other sizes, use formula: base steps + size factor
+        const baseSteps = 10;
+        const sizeFactor = size * size;
+        return Math.min(100, baseSteps + sizeFactor);
+    }
+  }
+
+  /**
    * Calculate recommended scramble steps
+   * @private
    */
   private static calculateScrambleSteps(size: number): number {
-    // Formula: base steps + size factor
-    const baseSteps = 10;
-    const sizeFactor = size * size;
-    return Math.min(100, baseSteps + sizeFactor);
+    return this.getDefaultScrambleSteps(size);
   }
 
   /**

@@ -1,0 +1,41 @@
+/* Gradient backgrounds */
+.background-gradientSunrise {
+  background: linear-gradient(to right top, #ff8c00, #ffd700);
+}
+
+.background-gradientTwilight {
+  background: linear-gradient(to right top, #4b0082, #00008b);
+}
+
+.background-gradientOcean {
+  background: linear-gradient(to right top, #00bfff, #0000cd);
+}
+
+.background-gradientForest {
+  background: linear-gradient(to right top, #90ee90, #006400);
+}
+
+.background-gradientFire {
+  background: linear-gradient(to right top, #ff4500, #8b0000);
+}
+
+.background-gradientCosmic {
+  background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+}
+
+.background-gradientCosmic::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(white, rgba(255, 255, 255, .2) 2px, transparent 7px);
+  background-size: 100px 100px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.background-gradientNeon {
+  background: linear-gradient(to right bottom, #39ff14, #00b3ff);
+}

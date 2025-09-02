@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D Rubik's Cube</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/src/gradient-backgrounds.css">
   </head>
   <body>
     <div id="app">
@@ -160,11 +161,17 @@
                   <option value="classic" selected>Classic</option>
                   <option value="neon">Neon</option>
                   <option value="pastel">Pastel</option>
+                  <option value="vibrant">Vibrant</option>
+                  <option value="sunset">Sunset</option>
                   <option value="earth">Earth</option>
                   <option value="ocean">Ocean</option>
                   <option value="fire">Fire</option>
                   <option value="rainbow">Rainbow</option>
                   <option value="monochrome">Monochrome</option>
+                  <option value="gradientRainbow">Gradient Rainbow</option>
+                  <option value="gradientNeon">Gradient Neon</option>
+                  <option value="gradientCosmic">Gradient Cosmic</option>
+                  <option value="gradientMetallic">Gradient Metallic</option>
                   <option value="random">Random</option>
                 </select>
                 <button id="generateRandomBtn" class="btn btn-small generate-random-btn" style="margin-top: 5px; width: 100%; display: none;">
@@ -184,6 +191,13 @@
                   <option value="space">Space</option>
                   <option value="fire">Fire</option>
                   <option value="aurora">Aurora</option>
+                  <option value="gradientSunrise">Gradient Sunrise</option>
+                  <option value="gradientTwilight">Gradient Twilight</option>
+                  <option value="gradientOcean">Gradient Ocean</option>
+                  <option value="gradientForest">Gradient Forest</option>
+                  <option value="gradientFire">Gradient Fire</option>
+                  <option value="gradientCosmic">Gradient Cosmic</option>
+                  <option value="gradientNeon">Gradient Neon</option>
                 </select>
               </div>
               <div class="control-group">
@@ -338,7 +352,7 @@
             <i class="fas fa-save"></i>
           </button>
           <button id="loadScrambleBtn" class="btn btn-small">
-            <i class="fas fa-download"></i>
+            <i class="fas fa-upload"></i>
           </button>
         </div>
         <div class="bottom-right-controls">
@@ -423,7 +437,6 @@
                   <li><i class="fas fa-undo"></i> <strong>Shift + Face:</strong> Counter-clockwise</li>
                   <li><i class="fas fa-layer-group"></i> <strong>M, E, S:</strong> Middle/Equator/Standing layers</li>
                   <li><i class="fas fa-sync-alt"></i> <strong>X, Y, Z:</strong> Rotate entire cube</li>
-                  <li><i class="fas fa-random"></i> <strong>Space:</strong> Scramble cube</li>
                   <li><i class="fas fa-history"></i> <strong>Ctrl+Z/Y:</strong> Undo/Redo</li>
                 </ul>
               </div>

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RubiksCube } from '../core/RubiksCube';
 import { Cubelet } from '../core/Cubelet';
+import { standardizeCubeConfig } from '../config/constants';
 
 /**
  * Interface for cubelet state data
@@ -36,6 +37,8 @@ interface CubeStateData {
   timestamp: string;
   version: string;
   colorTheme?: string; // Optional for backward compatibility
+  cubeType?: string;   // Type of cube (2x2x2, 3x3x3)
+  cubeSize?: number;   // Size of cube (2, 3)
 }
 
 /**
@@ -151,12 +154,18 @@ export class CubeStateManager {
       colors: [...cubelet.colors]
     }));
 
+    // Get cube type information
+    const cubeType = (this.rubiksCube as any).getCubeType?.() || '3x3x3';
+    const cubeSize = cubeType === '2x2x2' ? 2 : 3;
+
     return {
       cubeState,
       cubeletsData,
       timestamp: new Date().toISOString(),
       version: '1.0',
-      colorTheme: this.currentColorTheme // Save current theme
+      colorTheme: this.currentColorTheme, // Save current theme
+      cubeType: cubeType,
+      cubeSize: cubeSize
     };
   }
 
@@ -167,24 +176,35 @@ export class CubeStateManager {
     // Stop any ongoing animation
     this.rubiksCube.stopAnimation();
 
-    // Set 2D cube state
-    this.rubiksCube['rotationLogic'].setCubeState(data.cubeState);
+    try {
+      // Ensure cube config is standardized based on the cube type in the data
+      const cubeType = data.cubeType || '3x3x3';
+      standardizeCubeConfig(cubeType);
+      
+      // Set 2D cube state using rotationLogic
+      try {
+        console.log('Setting cube state with rotation logic');
+        this.rubiksCube['rotationLogic'].setCubeState(data.cubeState);
+      } catch (e) {
+        console.warn('Error setting cube state:', e);
+      }
 
-    // Update 3D cubelets
-    const cubelets = this.rubiksCube.getCubelets();
+      // Update 3D cubelets
+      const cubelets = this.rubiksCube.getCubelets();
 
-    if (cubelets.length !== data.cubeletsData.length) {
-      return;
-    }
+      if (cubelets.length !== data.cubeletsData.length) {
+        console.warn(`Mismatch in cubelet count: expected ${cubelets.length}, got ${data.cubeletsData.length}`);
+        return;
+      }
+      
+      // Get theme colors for conversion
+      const savedTheme = data.colorTheme || 'classic';
+      const currentThemeColors = this.colorThemes[this.currentColorTheme] || this.colorThemes['classic'];
+      const savedThemeColors = this.colorThemes[savedTheme] || this.colorThemes['classic'];
 
-    // Get theme colors for conversion
-    const savedTheme = data.colorTheme || 'classic';
-    const currentThemeColors = this.colorThemes[this.currentColorTheme] || this.colorThemes['classic'];
-    const savedThemeColors = this.colorThemes[savedTheme] || this.colorThemes['classic'];
-
-    for (let i = 0; i < cubelets.length; i++) {
-      const cubelet = cubelets[i];
-      const cubeletData = data.cubeletsData[i];
+      for (let i = 0; i < cubelets.length; i++) {
+        const cubelet = cubelets[i];
+        const cubeletData = data.cubeletsData[i];
 
       // Update position
       cubelet.position.copy(new THREE.Vector3(
@@ -216,6 +236,9 @@ export class CubeStateManager {
 
       // Update mesh materials
       this.updateCubeletMaterials(cubelet);
+      }
+    } catch (error) {
+      console.error('Error applying cube state:', error);
     }
   }
 
@@ -282,7 +305,7 @@ export class CubeStateManager {
     const dataStr = JSON.stringify(data, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
-    // Create filename with local date and time
+    // Create filename with local date and time and cube type
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const timeStr = now.toLocaleTimeString('en-GB', {
@@ -291,10 +314,13 @@ export class CubeStateManager {
       minute: '2-digit',
       second: '2-digit'
     }).replace(/:/g, '-'); // HH-MM-SS
+    
+    // Get cube type for the filename
+    const cubeType = (this.rubiksCube as any).getCubeType?.() || '3x3x3';
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = `rubiks-cube-state-${dateStr}_${timeStr}.json`;
+    link.download = `rubiks-cube-${cubeType}-${dateStr}_${timeStr}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -307,14 +333,66 @@ export class CubeStateManager {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const data: CubeStateData = JSON.parse(event.target?.result as string);
+          const jsonContent = event.target?.result as string;
+          console.log('Parsing JSON file');
+          
+          let data: CubeStateData;
+          try {
+            data = JSON.parse(jsonContent);
+          } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            reject(new Error('Invalid JSON format in file'));
+            return;
+          }
 
+          // Check file name for cube type hints
+          const fileName = file.name.toLowerCase();
+          const is2x2FileByName = fileName.includes('2x2') || fileName.includes('pocket');
+          const is3x3FileByName = fileName.includes('3x3') || !is2x2FileByName;
+          
+          console.log(`File name hints: is2x2=${is2x2FileByName}, is3x3=${is3x3FileByName}`);
+
+          // Try to determine cube size from data
+          let cubeSize: number;
+          
           // Validate data structure
           if (!this.validateCubeStateData(data)) {
-            reject(new Error('Invalid cube state file format'));
-            return;
+            console.warn('Basic validation failed, using file name to determine cube type');
+            cubeSize = is2x2FileByName ? 2 : 3;
+          } else {
+            cubeSize = this.detectCubeSizeFromData(data);
+          }
+          
+          console.log(`Detected cube size: ${cubeSize}x${cubeSize}`);
+          
+          // Get current cube information
+          const currentCube = this.rubiksCube;
+          const currentCubeSize = (currentCube as any).getCubeType?.() === '2x2x2' ? 2 : 3;
+
+          console.log(`Current cube size: ${currentCubeSize}x${currentCubeSize}`);
+
+          // If cube sizes don't match, switch to the appropriate cube size
+          if (cubeSize !== currentCubeSize) {
+            console.log(`Switching cube size from ${currentCubeSize} to ${cubeSize}`);
+            // Get CubeTypeManager instance to switch cube size
+            const cubeTypeManager = (window as any).CubeTypeManager?.getInstance();
+            if (cubeTypeManager) {
+              // Switch to the cube size from the file
+              await cubeTypeManager.switchToCubeSize(cubeSize);
+              
+              // Get the new cube reference after switching
+              this.rubiksCube = cubeTypeManager.getCurrentCube() || this.rubiksCube;
+            } else {
+              console.warn('CubeTypeManager not available globally');
+              
+              // If CubeTypeManager is not available, at least standardize the cube config
+              standardizeCubeConfig(cubeSize === 2 ? '2x2x2' : '3x3x3');
+            }
+          } else {
+            // Even if we're not switching cube size, ensure the configuration is standardized
+            standardizeCubeConfig(cubeSize === 2 ? '2x2x2' : '3x3x3');
           }
 
           this.loadState(data);
@@ -341,17 +419,41 @@ export class CubeStateManager {
 
     // Check cube state structure
     const faces = ['U', 'D', 'L', 'R', 'F', 'B'];
-    for (const face of faces) {
-      if (!data.cubeState[face] || !Array.isArray(data.cubeState[face])) return false;
-      if (data.cubeState[face].length !== 3) return false;
-      for (const row of data.cubeState[face]) {
-        if (!Array.isArray(row) || row.length !== 3) return false;
+    
+    // For 2x2 and 3x3 cubes
+    const isCube2x2 = data.cubeletsData.length === 8;
+    const isCube3x3 = data.cubeletsData.length === 27;
+    
+    if (!isCube2x2 && !isCube3x3) {
+      console.warn('Not a valid 2x2 or 3x3 cube - cubelet count:', data.cubeletsData.length);
+      return false; // Not a valid 2x2 or 3x3 cube
+    }
+    
+    const size = isCube2x2 ? 2 : 3;
+    console.log(`Validating cube state for ${size}x${size} cube`);
+    
+    // Simplified validation for 2x2 cubes which might have different state format
+    if (isCube2x2) {
+      // For 2x2 cubes, we'll be less strict about the state format
+      // Just ensure each face has a state array
+      for (const face of faces) {
+        if (!data.cubeState[face]) {
+          console.warn(`Missing face ${face} in cube state`);
+          return false;
+        }
+      }
+    } else {
+      // More strict validation for 3x3 cubes
+      for (const face of faces) {
+        if (!data.cubeState[face] || !Array.isArray(data.cubeState[face])) return false;
+        if (data.cubeState[face].length !== size) return false;
+        for (const row of data.cubeState[face]) {
+          if (!Array.isArray(row) || row.length !== size) return false;
+        }
       }
     }
 
     // Check cubelets data
-    if (data.cubeletsData.length !== 27) return false; // 3x3x3 cube has 27 cubelets
-
     for (const cubeletData of data.cubeletsData) {
       if (!cubeletData.position || !cubeletData.quaternion || !cubeletData.colors) return false;
       if (!Array.isArray(cubeletData.colors) || cubeletData.colors.length !== 6) return false;
@@ -372,17 +474,39 @@ export class CubeStateManager {
   /**
    * Load state from localStorage
    */
-  public loadFromLocalStorage(key: string = 'rubiks-cube-state'): boolean {
+  public async loadFromLocalStorage(key: string = 'rubiks-cube-state'): Promise<boolean> {
     const dataStr = localStorage.getItem(key);
     if (!dataStr) return false;
 
     try {
       const data: CubeStateData = JSON.parse(dataStr);
       if (this.validateCubeStateData(data)) {
+        // Determine cube size from data
+        const cubeSize = this.detectCubeSizeFromData(data);
+        
+        // Get current cube information
+        const currentCubeType = this.rubiksCube.getCubeType();
+        const currentCubeSize = currentCubeType === '2x2x2' ? 2 : 3;
+
+        // If cube sizes don't match, switch to the appropriate cube size
+        if (cubeSize !== currentCubeSize) {
+          console.log(`Switching cube size from ${currentCubeSize} to ${cubeSize} from localStorage`);
+          // Get CubeTypeManager instance to switch cube size
+          const cubeTypeManager = (window as any).CubeTypeManager?.getInstance();
+          if (cubeTypeManager) {
+            // Switch to the cube size from localStorage data
+            await cubeTypeManager.switchToCubeSize(cubeSize);
+            
+            // Get the new cube reference after switching
+            this.rubiksCube = cubeTypeManager.getCurrentCube() || this.rubiksCube;
+          }
+        }
+        
         this.loadState(data);
         return true;
       }
     } catch (error) {
+      console.error('Error loading from localStorage:', error);
     }
 
     return false;
@@ -390,16 +514,50 @@ export class CubeStateManager {
 
   /**
    * Check if there's a saved state in localStorage
+   * @param key The localStorage key
+   * @param requireSameCubeSize If true, only returns true if the saved state's cube size matches the current cube
    */
-  public hasSavedState(key: string = 'rubiks-cube-state'): boolean {
+  public hasSavedState(key: string = 'rubiks-cube-state', requireSameCubeSize: boolean = false): boolean {
     const dataStr = localStorage.getItem(key);
     if (!dataStr) return false;
 
     try {
       const data = JSON.parse(dataStr);
-      return this.validateCubeStateData(data);
+      
+      if (!this.validateCubeStateData(data)) {
+        return false;
+      }
+      
+      // If we need to verify cube size matches
+      if (requireSameCubeSize) {
+        const savedCubeSize = this.detectCubeSizeFromData(data);
+        const currentCubeType = this.rubiksCube.getCubeType();
+        const currentCubeSize = currentCubeType === '2x2x2' ? 2 : 3;
+        
+        if (savedCubeSize !== currentCubeSize) {
+          return false;
+        }
+      }
+      
+      return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Detect cube size from state data
+   */
+  private detectCubeSizeFromData(data: CubeStateData): number {
+    // Detect from the number of cubelets in the data
+    // 2x2 cube has 8 cubelets, 3x3 cube has 27 cubelets
+    if (data.cubeletsData.length === 8) {
+      return 2; // 2x2 cube
+    } else if (data.cubeletsData.length === 27) {
+      return 3; // 3x3 cube
+    } else {
+      // Default to 3x3 if we can't determine size
+      return 3;
     }
   }
 }

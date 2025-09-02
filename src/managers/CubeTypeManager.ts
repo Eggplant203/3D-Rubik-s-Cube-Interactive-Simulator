@@ -1,5 +1,7 @@
 import { CubeConfiguration, CubeConfigurationFactory } from '../config/CubeConfigurationFactory';
+import { CUBE_CONFIG, standardizeCubeConfig } from '../config/constants';
 import { RubiksCube } from '../core/RubiksCube';
+import { RubiksCube2x2 } from '../core/RubiksCube2x2';
 import { SceneManager } from '../core/SceneManager';
 import { SettingsManager } from './SettingsManager';
 import { ColorThemeManager } from './ColorThemeManager';
@@ -55,14 +57,38 @@ export class CubeTypeManager {
     this.sceneManager = sceneManager;
     this.notificationSystem = notificationSystem || null;
     
+    // Save the initial cube first
     if (initialCube) {
       this.currentCube = initialCube;
-    }
-
-    // Load initial cube size from settings
-    const savedSize = this.settingsManager.get('cubeSize');
-    if (savedSize !== 3) {
-      this.switchToCubeSize(savedSize);
+      
+      // Update internal config to match the initial cube
+      const cubeType = initialCube instanceof RubiksCube2x2 ? '2x2x2' : '3x3x3';
+      const size = cubeType === '2x2x2' ? 2 : 3;
+      
+      // Update CUBE_CONFIG to match the initial cube
+      CUBE_CONFIG.size = size;
+      
+      // Update settings to match the actual cube displayed
+      this.settingsManager.set('cubeSize', size);
+      this.currentConfig = size === 2 
+        ? CubeConfigurationFactory.create2x2() 
+        : CubeConfigurationFactory.create3x3();
+    } else {
+      // No initial cube provided, create one based on settings
+      const savedSize = this.settingsManager.get('cubeSize');
+      
+      // Ensure settings and displayed cube are in sync on page refresh
+      if (savedSize !== undefined) {
+        console.log(`Initializing with saved cube size: ${savedSize}`);
+        this.switchToCubeSize(savedSize);
+      } else {
+        // Default to 3x3 if no saved size
+        console.log('No saved cube size found, defaulting to 3x3');
+        this.switchToCubeSize(3);
+      }
+      
+      // Save the size to settings to ensure consistency
+      this.settingsManager.set('cubeSize', savedSize || 3);
     }
   }
 
@@ -102,24 +128,43 @@ export class CubeTypeManager {
 
       // Dispose current cube if exists
       if (this.currentCube) {
-        // Stop any ongoing animations
-        this.currentCube.stopAnimation();
-        
-        // Remove from scene (this should be handled by RubiksCube destructor)
-        // For now, we'll create a new scene or clear the existing one
+        // Stop any ongoing animations and dispose properly
+        this.currentCube.dispose();
       }
 
+      // Update CUBE_CONFIG with new size and standardize configuration
+      CUBE_CONFIG.size = size;
+      standardizeCubeConfig(size === 2 ? '2x2x2' : '3x3x3');
+      
       // Create new cube with new configuration
-      this.currentCube = new RubiksCube(this.sceneManager.getScene());
+      if (size === 2) {
+        this.currentCube = new RubiksCube2x2(this.sceneManager.getScene());
+      } else {
+        this.currentCube = new RubiksCube(this.sceneManager.getScene());
+      }
       this.currentConfig = newConfig;
 
       // Update cube colors to match configuration
       this.currentCube.updateColors(newConfig.colors);
 
-      // Update settings
-      this.settingsManager.updateSettings(
-        this.settingsManager.getCubeSizeOptimizedSettings(size)
-      );
+      // Get optimized settings for the new cube size
+      const optimizedSettings = this.settingsManager.getCubeSizeOptimizedSettings(size);
+      
+      // Get default scramble steps from the CubeConfigurationFactory
+      const scrambleSteps = CubeConfigurationFactory.getDefaultScrambleSteps(size);
+      
+      // Override scramble steps in optimized settings
+      optimizedSettings.scrambleSteps = scrambleSteps;
+      
+      // Update settings and explicitly save to localStorage
+      this.settingsManager.updateSettings(optimizedSettings);
+      
+      // Ensure cube size and scramble steps are explicitly saved to be consistent on page refresh
+      this.settingsManager.set('cubeSize', size);
+      this.settingsManager.set('scrambleSteps', scrambleSteps);
+      
+      // Log for debugging
+      console.log(`Switched to cube size ${size} with scramble steps ${scrambleSteps}`);
 
       // Trigger callbacks
       this.triggerCubeChangeCallbacks();
@@ -154,6 +199,14 @@ export class CubeTypeManager {
     };
 
     return this.switchToCubeSize(sizeMap[type]);
+  }
+
+  /**
+   * Get the ColorThemeManager instance
+   * Allows other components to access the ColorThemeManager
+   */
+  public getColorThemeManager(): ColorThemeManager {
+    return this.colorThemeManager;
   }
 
   /**
@@ -332,5 +385,12 @@ export class CubeTypeManager {
         }
       });
     }
+  }
+  
+  /**
+   * Get the settings manager instance
+   */
+  public getSettingsManager(): SettingsManager {
+    return this.settingsManager;
   }
 }

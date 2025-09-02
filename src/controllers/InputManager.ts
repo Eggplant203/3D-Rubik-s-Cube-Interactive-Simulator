@@ -199,6 +199,13 @@ export class KeyboardController implements InputHandler {
     // Only handle cube rotation keys, avoid UI conflicts
     let normalizedKey = this.getNormalizedKey(event);
 
+    // Check if cube is 2x2 and disable middle slice moves
+    const is2x2Cube = (this.cube as any).getCubeType && (this.cube as any).getCubeType() === '2x2x2';
+    
+    console.log('Keyboard input:', normalizedKey, 
+                'Is 2x2 cube:', is2x2Cube, 
+                'Cube type:', (this.cube as any).getCubeType?.() || 'unknown');
+    
     if (normalizedKey === this.keyMappings.front) {
       event.preventDefault();
       this.cube.rotateFace('FRONT', isShiftPressed);
@@ -217,13 +224,13 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.down) {
       event.preventDefault();
       this.cube.rotateFace('BOTTOM', !isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.middle) {
+    } else if (normalizedKey === this.keyMappings.middle && !is2x2Cube) {
       event.preventDefault();
       this.cube.rotateMiddle(!isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.equator) {
+    } else if (normalizedKey === this.keyMappings.equator && !is2x2Cube) {
       event.preventDefault();
       this.cube.rotateEquator(!isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.standing) {
+    } else if (normalizedKey === this.keyMappings.standing && !is2x2Cube) {
       event.preventDefault();
       this.cube.rotateStanding(isShiftPressed);
     } else if (normalizedKey === this.keyMappings.cubeX) {
@@ -235,6 +242,15 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.cubeZ) {
       event.preventDefault();
       this.cube.rotateCubeZ(isShiftPressed);
+    } else if (is2x2Cube && (normalizedKey === this.keyMappings.middle || normalizedKey === this.keyMappings.equator || normalizedKey === this.keyMappings.standing)) {
+      // Show notification for disabled middle slice moves on 2x2
+      if (this.uiController) {
+        this.uiController.showNotification(
+          'Middle slice moves are not available for 2x2x2 cube',
+          'info',
+          2000
+        );
+      }
     } else {
       // Handle corner rotations with Ctrl + number (1-8)
       switch (normalizedKey) {
@@ -253,7 +269,8 @@ export class KeyboardController implements InputHandler {
             const direction = isShiftPressed ? 'counter-clockwise' : 'clockwise';
             const cornerNames = [
               'Bottom-Left-Back', 'Bottom-Left-Front', 'Top-Left-Back', 'Top-Left-Front',
-              'Bottom-Right-Back', 'Bottom-Right-Front', 'Top-Right-Back', 'Top-Right-Front'
+              'Bottom-Right-Back', 'Bottom-Right-Front', 'Top-Right-Back', 'Top-Right-Front',
+              'Center-Corner'
             ];
             
             this.cube.rotateCorner(cornerIndex, !isShiftPressed); // Shift reverses direction
@@ -268,26 +285,9 @@ export class KeyboardController implements InputHandler {
             }
           }
           break;
-        case ' ': // Space key for scramble
+        // Space key scramble functionality has been removed
+        case ' ': 
           event.preventDefault();
-          
-          // Check if save record is enabled and timer is running
-          if (this.getSaveRecordEnabled() && this.getIsTimerRunning()) {
-            // Show notification and prevent scramble
-            if (this.uiController) {
-              this.uiController.showNotification(
-                'Cannot scramble while timer is running in Timer mode',
-                'error',
-                3000
-              );
-            }
-            return;
-          }
-          
-          // Use UIController's keyboard scramble handler for consistent behavior
-          if (this.uiController) {
-            this.uiController.handleKeyboardScramble();
-          }
           break;
         // Also handle by keyCode for better compatibility
         default:
@@ -298,7 +298,8 @@ export class KeyboardController implements InputHandler {
             const direction = isShiftPressed ? 'counter-clockwise' : 'clockwise';
             const cornerNames = [
               'Bottom-Left-Back', 'Bottom-Left-Front', 'Top-Left-Back', 'Top-Left-Front',
-              'Bottom-Right-Back', 'Bottom-Right-Front', 'Top-Right-Back', 'Top-Right-Front'
+              'Bottom-Right-Back', 'Bottom-Right-Front', 'Top-Right-Back', 'Top-Right-Front',
+              'Center-Corner'
             ];
             
             this.cube.rotateCorner(cornerIndex, !isShiftPressed);
@@ -337,6 +338,9 @@ export class KeyboardController implements InputHandler {
    * Execute a single move
    */
   private async executeSingleMove(key: string, isPrime: boolean): Promise<void> {
+    // Check if cube is 2x2 and disable middle slice moves
+    const is2x2Cube = (this.cube as any).getCubeType && (this.cube as any).getCubeType() === '2x2x2';
+
     switch (key.toLowerCase()) {
       case 'f':
         await this.cube.rotateFace('FRONT', isPrime);
@@ -357,12 +361,21 @@ export class KeyboardController implements InputHandler {
         await this.cube.rotateFace('BOTTOM', !isPrime);
         break;
       case 'm':
+        if (is2x2Cube) {
+          throw new Error('Middle slice moves are not available for 2x2x2 cube');
+        }
         await this.cube.rotateMiddle(!isPrime);
         break;
       case 'e':
+        if (is2x2Cube) {
+          throw new Error('Equator moves are not available for 2x2x2 cube');
+        }
         await this.cube.rotateEquator(!isPrime);
         break;
       case 's':
+        if (is2x2Cube) {
+          throw new Error('Standing moves are not available for 2x2x2 cube');
+        }
         await this.cube.rotateStanding(isPrime);
         break;
       case 'x':
@@ -577,6 +590,46 @@ export class InputManager {
    */
   public getKeyboardController(): KeyboardController | null {
     return this.handlers.find(handler => handler instanceof KeyboardController) as KeyboardController || null;
+  }
+
+  /**
+   * Update the cube reference in all input handlers
+   * This is needed when a new cube instance is created
+   */
+  public updateCube(newCube: RubiksCube): void {
+    // Disable all handlers first
+    this.handlers.forEach(handler => handler.disable());
+    
+    // Get the current key mappings if they exist
+    const oldKeyboardController = this.getKeyboardController();
+    const currentKeyMappings = oldKeyboardController?.getKeyMappings();
+    
+    // Create a new keyboard controller with the new cube
+    const keyboardController = new KeyboardController(
+      newCube, 
+      () => this.uiController?.getSaveRecordEnabled() || false, 
+      () => this.uiController?.getIsTimerRunning() || false,
+      this.uiController
+    );
+    
+    // Apply saved key mappings if they exist
+    if (currentKeyMappings) {
+      keyboardController.setKeyMappings(currentKeyMappings);
+    }
+    
+    // Create a new UI controller
+    const uiInputController = new UIInputController(newCube);
+    
+    // Replace all handlers
+    this.handlers = [keyboardController, uiInputController];
+    
+    // Re-enable handlers if they were enabled before
+    this.enable();
+    
+    console.log('Updated cube in InputManager', 
+                'Cube type:', (newCube as any).getCubeType?.() || '3x3x3', 
+                'Handlers:', this.handlers.length,
+                'Applied key mappings:', currentKeyMappings ? 'Yes' : 'No');
   }
 
   /**
