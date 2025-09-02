@@ -81,74 +81,6 @@ export class UIController {
     return this.isTimerRunning;
   }
 
-  // Color themes for cube
-  private colorThemes = {
-    classic: {
-      front: '#3366ff',   // Blue
-      back: '#33cc33',    // Green
-      right: '#ff3333',   // Red
-      left: '#ff9900',    // Orange
-      top: '#ffff33',     // Yellow
-      bottom: '#ffffff'   // White
-    },
-    neon: {
-      front: '#00ffff',   // Cyan
-      back: '#ff00ff',    // Magenta
-      right: '#ff0080',   // Pink
-      left: '#80ff00',    // Lime
-      top: '#ffff00',     // Yellow
-      bottom: '#ffffff'   // White
-    },
-    pastel: {
-      front: '#a8d5e2',   // Pastel blue
-      back: '#b8e6b8',    // Pastel green
-      right: '#f4a4a4',   // Pastel red
-      left: '#f9d5a7',    // Pastel orange
-      top: '#fff2a8',     // Pastel yellow
-      bottom: '#f5f5f5'   // Light gray
-    },
-    earth: {
-      front: '#8b4513',   // Brown
-      back: '#228b22',    // Forest green
-      right: '#dc143c',   // Crimson
-      left: '#daa520',    // Goldenrod
-      top: '#ffd700',     // Gold
-      bottom: '#f5f5dc'   // Beige
-    },
-    ocean: {
-      front: '#1e90ff',   // Dodger blue
-      back: '#008080',    // Teal
-      right: '#ff6347',   // Coral
-      left: '#20b2aa',    // Light sea green
-      top: '#87ceeb',     // Sky blue
-      bottom: '#e0ffff'   // Light cyan
-    },
-    fire: {
-      front: '#ff4500',   // Orange red
-      back: '#ff1493',    // Deep pink
-      right: '#dc143c',   // Crimson
-      left: '#ff8c00',    // Dark orange
-      top: '#ffd700',     // Gold
-      bottom: '#fff8dc'   // Cornsilk
-    },
-    rainbow: {
-      front: '#ff0000',   // Red
-      back: '#ff7f00',    // Orange
-      right: '#ffff00',   // Yellow
-      left: '#00ff00',    // Green
-      top: '#0000ff',     // Blue
-      bottom: '#8b00ff'   // Violet
-    },
-    monochrome: {
-      front: '#2c2c2c',   // Dark gray
-      back: '#404040',    // Medium gray
-      right: '#595959',   // Light gray
-      left: '#737373',    // Silver
-      top: '#8c8c8c',     // Light silver
-      bottom: '#a6a6a6'   // Pale silver
-    }
-  };
-
   // DOM Elements grouped by category
   private elements = {
     // Header controls
@@ -217,6 +149,20 @@ export class UIController {
       rotateTopPrime: document.getElementById('rotateTopPrime') as HTMLButtonElement,
       rotateBottom: document.getElementById('rotateBottom') as HTMLButtonElement,
       rotateBottomPrime: document.getElementById('rotateBottomPrime') as HTMLButtonElement,
+      
+      // Inner slice rotation buttons (4x4x4 only)
+      rotateInnerFront: document.getElementById('rotateInnerFront') as HTMLButtonElement,
+      rotateInnerFrontPrime: document.getElementById('rotateInnerFrontPrime') as HTMLButtonElement,
+      rotateInnerBack: document.getElementById('rotateInnerBack') as HTMLButtonElement,
+      rotateInnerBackPrime: document.getElementById('rotateInnerBackPrime') as HTMLButtonElement,
+      rotateInnerRight: document.getElementById('rotateInnerRight') as HTMLButtonElement,
+      rotateInnerRightPrime: document.getElementById('rotateInnerRightPrime') as HTMLButtonElement,
+      rotateInnerLeft: document.getElementById('rotateInnerLeft') as HTMLButtonElement,
+      rotateInnerLeftPrime: document.getElementById('rotateInnerLeftPrime') as HTMLButtonElement,
+      rotateInnerTop: document.getElementById('rotateInnerTop') as HTMLButtonElement,
+      rotateInnerTopPrime: document.getElementById('rotateInnerTopPrime') as HTMLButtonElement,
+      rotateInnerBottom: document.getElementById('rotateInnerBottom') as HTMLButtonElement,
+      rotateInnerBottomPrime: document.getElementById('rotateInnerBottomPrime') as HTMLButtonElement,
       rotateMiddle: document.getElementById('rotateMiddle') as HTMLButtonElement,
       rotateMiddlePrime: document.getElementById('rotateMiddlePrime') as HTMLButtonElement,
       rotateEquator: document.getElementById('rotateEquator') as HTMLButtonElement,
@@ -321,6 +267,9 @@ export class UIController {
       this.cube = newCube;
       this.cubeStateManager = new CubeStateManager(newCube);
       this.cubeStateManager.setColorTheme(this.currentColorTheme);
+      
+      // Update UI for middle layer controls based on cube type
+      this.updateMiddleLayerControls();
       
       // Update input manager with new cube
       if (this.inputManager) {
@@ -608,6 +557,55 @@ export class UIController {
     
     this.elements.rotation.rotateBottomPrime?.addEventListener('click', async () => {
       await this.handleFaceRotation('BOTTOM', false);
+    });
+    
+    // Inner slice rotation buttons (4x4x4 only)
+    this.elements.rotation.rotateInnerFront?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('FRONT', true);
+    });
+    
+    this.elements.rotation.rotateInnerFrontPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('FRONT', false);
+    });
+    
+    this.elements.rotation.rotateInnerBack?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('BACK', true);
+    });
+    
+    this.elements.rotation.rotateInnerBackPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('BACK', false);
+    });
+    
+    this.elements.rotation.rotateInnerRight?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('RIGHT', true);
+    });
+    
+    this.elements.rotation.rotateInnerRightPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('RIGHT', false);
+    });
+    
+    this.elements.rotation.rotateInnerLeft?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('LEFT', true);
+    });
+    
+    this.elements.rotation.rotateInnerLeftPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('LEFT', false);
+    });
+    
+    this.elements.rotation.rotateInnerTop?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('TOP', true);
+    });
+    
+    this.elements.rotation.rotateInnerTopPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('TOP', false);
+    });
+    
+    this.elements.rotation.rotateInnerBottom?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('BOTTOM', true);
+    });
+    
+    this.elements.rotation.rotateInnerBottomPrime?.addEventListener('click', async () => {
+      await this.handleInnerSliceRotation('BOTTOM', false);
     });
     
     this.elements.rotation.rotateMiddle?.addEventListener('click', async () => {
@@ -1246,13 +1244,24 @@ export class UIController {
       return;
     }
 
-    // For 2x2 cubes, validate that no middle layer or wide moves are used
-    if (this.is2x2Cube()) {
-      // Check for middle layer moves (M, E, S) and wide moves (lowercase or with 'w')
-      const invalidMoves2x2 = /[mes]|[rufbld]w/i;
-      if (invalidMoves2x2.test(sequence)) {
-        this.showSequenceFeedback('Invalid moves for 2x2 cube. Middle layer (M, E, S) and wide moves (e.g., r, u, Rw) are not supported on 2x2 cubes.', 'error');
+    // For even-layered cubes (2x2, 4x4), validate that no middle layer moves are used
+    if (this.isEvenLayeredCube()) {
+      // Check for middle layer moves (M, E, S)
+      const invalidMovesEvenLayered = /[mes]/i;
+      if (invalidMovesEvenLayered.test(sequence)) {
+        const cubeType = this.is2x2Cube() ? '2x2x2' : '4x4x4';
+        this.showSequenceFeedback(`Invalid moves for ${cubeType} cube. Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
         return;
+      }
+      
+      // For 2x2x2, check for lowercase moves or wide moves (f, r, Fw, Rw etc.)
+      // Wide moves are now allowed for 4x4x4
+      if (this.is2x2Cube()) {
+        const invalidMoves2x2 = /[fbruld]w|^[fbruld](?![2'])|(\s+)[fbruld](?![2'])/g;
+        if (invalidMoves2x2.test(sequence)) {
+          this.showSequenceFeedback('Invalid moves for 2x2x2 cube. Wide moves are not supported on 2x2 cubes.', 'error');
+          return;
+        }
       }
     }
 
@@ -1263,13 +1272,36 @@ export class UIController {
       return;
     }
 
-    // Additional validation for 2x2 cubes - check for invalid moves
-    if (this.is2x2Cube()) {
-      const invalidMove = moves.find(move => move.invalid2x2);
+    // Additional validation for even-layered cubes (2x2, 4x4) - check for invalid moves
+    if (this.isEvenLayeredCube()) {
+      const invalidMove = moves.find(move => 
+        // Check for middle layer moves in all even-layered cubes
+        (move.type === 'middle' && move.face === 'M') || 
+        (move.type === 'middle' && move.face === 'E') || 
+        (move.type === 'middle' && move.face === 'S')
+      );
       
       if (invalidMove) {
-        this.showSequenceFeedback('Invalid move for 2x2 cube. Middle layer moves (M, E, S) and wide moves (r, u, Rw, etc.) are not supported on 2x2 cubes.', 'error');
+        const cubeType = this.is2x2Cube() ? '2x2x2' : '4x4x4';
+        this.showSequenceFeedback(`Invalid moves for ${cubeType} cube. Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
         return;
+      }
+      
+      // Check for invalid wide moves and slice moves
+      if (this.is2x2Cube()) {
+        // For 2x2x2: Check for any wide moves
+        const invalidWideMove = moves.find(move => 
+          move.invalid2x2 && 
+          !(move.type === 'middle' && (move.face === 'M' || move.face === 'E' || move.face === 'S'))
+        );
+        
+        if (invalidWideMove) {
+          this.showSequenceFeedback('Invalid moves for 2x2x2 cube. Wide moves are not supported on 2x2 cubes.', 'error');
+          return;
+        }
+      } else {
+        // For 4x4x4: Wide moves are now allowed
+        // We don't need to check for invalid wide moves anymore
       }
     }
 
@@ -1326,8 +1358,7 @@ export class UIController {
       return null;
     }
     
-    // We'll check if this is a 2x2 cube in the parsing logic
-
+    // We'll check if this is an even-layered cube (2x2 or 4x4) in the parsing logic
     for (const token of tokens) {
       if (!token) continue;
 
@@ -1353,7 +1384,8 @@ export class UIController {
           return null; // Invalid double layer move
         }
         
-        // Mark double layer moves as invalid for 2x2 cubes
+        // Mark double layer moves as invalid for 2x2 cubes only
+        // For 4x4, allow double layer moves
         if (this.is2x2Cube()) {
           doubleMove.invalid2x2 = true;
         }
@@ -1364,6 +1396,36 @@ export class UIController {
 
       // Process regular moves
       baseToken = baseToken.toUpperCase();
+
+      // Check for inner slice notation for 4x4x4 cube (2F, 2R, etc.)
+      const innerSliceMatch = baseToken.match(/^2([FBRLUDMESXYZ])('?)(\d*)('?)$/);
+      if (innerSliceMatch && this.is4x4Cube()) {
+        // This is an inner slice rotation for 4x4x4 cube
+        const faceLetter = innerSliceMatch[1];
+        const isPrime = innerSliceMatch[2] === "'" || innerSliceMatch[4] === "'";
+        const repetitionStr = innerSliceMatch[3] || '1';
+        const repetitionNum = parseInt(repetitionStr);
+        
+        // Create inner slice move
+        const moveObj: any = {
+          type: 'innerSlice',
+          face: this.convertFaceLetter(faceLetter),
+          clockwise: !isPrime
+        };
+        
+        if (repetitionNum > 1) {
+          moveObj.repetition = repetitionNum;
+        }
+        
+        moves.push(moveObj);
+        
+        continue;
+      }
+      
+      // Handle leading 1 as optional prefix (1U = U)
+      if (baseToken.startsWith('1') && baseToken.length > 1) {
+        baseToken = baseToken.substring(1);
+      }
 
       // Validate token format using regex
       const validPattern = /^[FBRLUDMESXYZ]'?\d*'?$|^\d*'?\d*$/;
@@ -1400,6 +1462,11 @@ export class UIController {
         move.type = 'middle';
         move.face = notation;
         
+        // Mark middle layer moves as invalid for both 2x2 and 4x4 cubes
+        if (this.isEvenLayeredCube()) {
+          move.invalid2x2 = true;
+        }
+        
         // Mark middle layer moves as invalid for 2x2 cubes
         if (this.is2x2Cube()) {
           move.invalid2x2 = true;
@@ -1417,6 +1484,27 @@ export class UIController {
     return moves.length > 0 ? moves : null;
   }
 
+  /**
+   * Convert face letter to face constant
+   */
+  private convertFaceLetter(letter: string): 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM' | string {
+    switch(letter) {
+      case 'F': return 'FRONT';
+      case 'B': return 'BACK';
+      case 'R': return 'RIGHT';
+      case 'L': return 'LEFT';
+      case 'U': return 'TOP';
+      case 'D': return 'BOTTOM';
+      case 'M': return 'M';
+      case 'E': return 'E';
+      case 'S': return 'S';
+      case 'X': return 'X';
+      case 'Y': return 'Y';
+      case 'Z': return 'Z';
+      default: return letter;
+    }
+  }
+  
   /**
    * Create a double layer move object
    */
@@ -1451,63 +1539,136 @@ export class UIController {
    * Execute a single move
    */
   private async executeMove(move: {type: string, face?: string, clockwise: boolean, repetition?: number}): Promise<void> {
-    if (move.type === 'double' && move.face) {
+    if (move.type === 'innerSlice' && move.face && this.is4x4Cube()) {
+      // Handle inner slice rotation for 4x4x4 cube
+      const repetition = move.repetition || 1;
+      const cube = this.getCurrentCube() as any;
+      
+      if (!cube.rotateInnerSlice) {
+        throw new Error('Inner slice rotation not supported by current cube');
+      }
+      
+      // Convert face notation if needed (U -> TOP, etc.)
+      const face = move.face;
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = move.clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !move.clockwise;
+      }
+      
+      for (let i = 0; i < repetition; i++) {
+        await cube.rotateInnerSlice(face, adjustedClockwise);
+      }
+      
+      return;
+    }
+    else if (move.type === 'double' && move.face) {
       // Handle double layer move with repetition
       const repetition = move.repetition || 1;
       const faceNotation = move.face.toLowerCase() + (move.clockwise ? '' : "'");
 
-      // Determine middle notation
-      let middleNotation = '';
-      let middleClockwise = true;
-      switch (move.face) {
-        case 'R':
-          middleNotation = 'm';
-          middleClockwise = false; // M' for r
-          break;
-        case 'U':
-          middleNotation = 'e';
-          middleClockwise = false; // E' for u
-          break;
-        case 'L':
-          middleNotation = 'm';
-          middleClockwise = true; // M for l
-          break;
-        case 'F':
-          middleNotation = 's';
-          middleClockwise = true; // S for f
-          break;
-        case 'B':
-          middleNotation = 's';
-          middleClockwise = false; // S' for b
-          break;
-        case 'D':
-          middleNotation = 'e';
-          middleClockwise = true; // E for d
-          break;
-        default:
-          throw new Error(`Unknown double face: ${move.face}`);
-      }
-
-      const middlePrime = move.clockwise ? (middleClockwise ? '' : "'") : (!middleClockwise ? '' : "'");
-      const fullMiddleNotation = middleNotation + middlePrime;
-
       // Get the current active cube
       const currentCube = this.getCurrentCube();
-      
-      // Temporarily disable onMove to prevent double counting
-      const originalOnMove = currentCube.onMove;
-      currentCube.onMove = undefined;
+      const cubeType = (currentCube as any).getCubeType?.();
 
-      for (let i = 0; i < repetition; i++) {
-        // Execute face move
-        await this.keyboardController.executeMoveByNotation(faceNotation);
+      if (cubeType === '4x4x4') {
+        // For 4x4x4 cube, we handle wide moves by rotating both the outer face and inner slice
+        // Temporarily disable onMove to prevent double counting
+        const originalOnMove = currentCube.onMove;
+        currentCube.onMove = undefined;
 
-        // Execute middle move
-        await this.keyboardController.executeMoveByNotation(fullMiddleNotation);
+        // Convert face to format used by rotateInnerSlice
+        const faceMap: Record<string, 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM'> = {
+          'F': 'FRONT',
+          'B': 'BACK',
+          'R': 'RIGHT',
+          'L': 'LEFT',
+          'U': 'TOP',
+          'D': 'BOTTOM'
+        };
+
+        const face = faceMap[move.face];
+        
+        // Understanding the rotation mechanics:
+        // In RubiksCube4x4.ts executeMove(), both rotateFace and rotateInnerSlice use !isPrime
+        // This means they're already inverting the input direction
+        
+        // For consistency with how the moves are defined, we need to:
+        let outerClockwise = move.clockwise;
+        let innerClockwise = move.clockwise;
+        
+        // For F, R, U faces, we need to invert BOTH outer and inner slices together
+        // This keeps them moving in the same visual direction and consistent with input
+        if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+          outerClockwise = !move.clockwise;
+          innerClockwise = !move.clockwise;
+        }
+        
+        for (let i = 0; i < repetition; i++) {
+          // Rotate the outer face with adjusted direction
+          await currentCube.rotateFace(face, outerClockwise);
+          
+          // Rotate inner slice with matching adjusted direction
+          if ((currentCube as any).rotateInnerSlice) {
+            await (currentCube as any).rotateInnerSlice(face, innerClockwise);
+          }
+        }
+
+        // Restore onMove
+        currentCube.onMove = originalOnMove;
+      } else {
+        // For other cubes (3x3x3), use the middle layer logic
+        // Determine middle notation
+        let middleNotation = '';
+        let middleClockwise = true;
+        switch (move.face) {
+          case 'R':
+            middleNotation = 'm';
+            middleClockwise = false; // M' for r
+            break;
+          case 'U':
+            middleNotation = 'e';
+            middleClockwise = false; // E' for u
+            break;
+          case 'L':
+            middleNotation = 'm';
+            middleClockwise = true; // M for l
+            break;
+          case 'F':
+            middleNotation = 's';
+            middleClockwise = true; // S for f
+            break;
+          case 'B':
+            middleNotation = 's';
+            middleClockwise = false; // S' for b
+            break;
+          case 'D':
+            middleNotation = 'e';
+            middleClockwise = true; // E for d
+            break;
+          default:
+            throw new Error(`Unknown double face: ${move.face}`);
+        }
+
+        const middlePrime = move.clockwise ? (middleClockwise ? '' : "'") : (!middleClockwise ? '' : "'");
+        const fullMiddleNotation = middleNotation + middlePrime;
+        
+        // Temporarily disable onMove to prevent double counting
+        const originalOnMove = currentCube.onMove;
+        currentCube.onMove = undefined;
+
+        for (let i = 0; i < repetition; i++) {
+          // Execute face move
+          await this.keyboardController.executeMoveByNotation(faceNotation);
+
+          // Execute middle move
+          await this.keyboardController.executeMoveByNotation(fullMiddleNotation);
+        }
+        
+        // Restore onMove
+        currentCube.onMove = originalOnMove;
       }
-
-      // Restore onMove
-      currentCube.onMove = originalOnMove;
 
       // Manually increase moveCount by the repetition count
       this.moveCount += repetition;
@@ -1954,6 +2115,12 @@ export class UIController {
    */
   private async handleCubeSizeChange(size: number): Promise<void> {
     try {
+      // Turn off blindfold mode if it's enabled
+      if (this.blindfoldModeEnabled) {
+        this.elements.appearance.blindfoldMode.checked = false;
+        this.toggleBlindfoldMode(false);
+      }
+      
       const success = await this.cubeTypeManager.switchToCubeSize(size);
       if (success) {
         // Automatically reset the cube when cube size is changed
@@ -2004,15 +2171,14 @@ export class UIController {
       // Show the generate random button when random theme is selected
       this.elements.appearance.generateRandomBtn.style.display = 'block';
     } else {
-      // For gradient themes, get colors from ColorThemeManager
-      if (theme.startsWith('gradient')) {
-        const themeManager = ColorThemeManager.getInstance();
-        const themeColors = themeManager.getColorScheme(theme);
-        colors = themeColors || this.colorThemes['classic'];
-      } else {
-        // Regular theme from built-in colorThemes
-        colors = this.colorThemes[theme as keyof typeof this.colorThemes] || this.colorThemes['classic'];
-      }
+      // Get theme from ColorThemeManager for consistency
+      const themeManager = ColorThemeManager.getInstance();
+      const themeColors = themeManager.getColorScheme(theme);
+      
+      // If not found in ColorThemeManager, use classic as fallback
+      const classicColors = themeManager.getColorScheme('classic')!;
+      colors = themeColors as typeof CUBE_CONFIG.colors || classicColors;
+      
       // Hide the generate random button for other themes
       this.elements.appearance.generateRandomBtn.style.display = 'none';
     }
@@ -2110,6 +2276,49 @@ export class UIController {
     this.updateButtonStatesForTimer();
     this.updateCubeSizeSelector();
     this.updateScrambleStepsInput();
+    this.updateMiddleLayerControls();
+    this.updateInnerSliceControls();
+  }
+  
+  /**
+   * Update Middle Layer Controls visibility based on cube type
+   * Hide middle layer controls for even-layered cubes (2x2, 4x4)
+   */
+  private updateMiddleLayerControls(): void {
+    // Find all control groups and locate the one with Middle Layer Rotations label
+    const controlGroups = document.querySelectorAll('.control-group');
+    
+    controlGroups.forEach(group => {
+      const label = group.querySelector('label');
+      if (label && label.textContent === 'Middle Layer Rotations') {
+        const section = group as HTMLElement;
+        
+        // For even-layered cubes like 2x2 and 4x4, hide the middle layer controls
+        if (this.isEvenLayeredCube()) {
+          section.style.display = 'none';
+        } else {
+          section.style.display = 'block';
+        }
+      }
+    });
+  }
+  
+  /**
+   * Update Inner Slice Controls visibility based on cube type
+   * Only show for 4x4x4 cube
+   */
+  private updateInnerSliceControls(): void {
+    // Get the inner slice controls div
+    const innerSliceControls = document.getElementById('innerSliceControls');
+    
+    if (innerSliceControls) {
+      // Only show inner slice controls for 4x4x4 cube
+      if (this.is4x4Cube()) {
+        innerSliceControls.style.display = 'block';
+      } else {
+        innerSliceControls.style.display = 'none';
+      }
+    }
   }
   
   /**
@@ -2232,6 +2441,59 @@ export class UIController {
     const currentCube = this.getCurrentCube();
     return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '2x2x2';
   }
+  
+  /**
+   * Check if current cube is a 4x4x4 cube
+   */
+  private is4x4Cube(): boolean {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '4x4x4';
+  }
+  
+  /**
+   * Handle inner slice rotation for 4x4x4 cube
+   */
+  private async handleInnerSliceRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
+    try {
+      if (!this.is4x4Cube()) {
+        this.notificationSystem.error('Inner slice rotation is only available for 4x4x4 cube');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube() as any;
+      
+      if (!currentCube.rotateInnerSlice) {
+        this.notificationSystem.error('Inner slice rotation not supported by current cube');
+        return;
+      }
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !clockwise;
+      }
+      
+      // Rotate the inner slice with adjusted direction
+      await currentCube.rotateInnerSlice(face, adjustedClockwise);
+      
+      // Always increment moves count
+      this.moveCount++;
+      this.updateMoveCounter();
+      
+      // Play sound
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating inner slice:", error);
+    }
+  }
+  
+  /**
+   * Check if current cube has an even number of layers (2x2, 4x4, etc.)
+   * These cubes don't support middle layer rotations
+   */
+  private isEvenLayeredCube(): boolean {
+    return this.is2x2Cube() || this.is4x4Cube();
+  }
 
   /**
    * Helper method to handle face rotation with error handling
@@ -2264,9 +2526,9 @@ export class UIController {
    */
   private async handleMiddleRotation(clockwise: boolean): Promise<void> {
     try {
-      // Check if it's a 2x2 cube
-      if (this.is2x2Cube()) {
-        this.notificationSystem.show('Middle layer rotation not available on 2x2 cube', 'info');
+      // Check if it's an even-layered cube (2x2 or 4x4)
+      if (this.isEvenLayeredCube()) {
+        this.notificationSystem.show(`Middle layer rotation not available on ${this.getCurrentCubeType()} cube`, 'info');
         return;
       }
       
@@ -2280,15 +2542,23 @@ export class UIController {
       console.error("Error rotating middle layer:", error);
     }
   }
+  
+  /**
+   * Get current cube type string (e.g., "2x2x2", "4x4x4")
+   */
+  private getCurrentCubeType(): string {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType ? (currentCube as any).getCubeType() : '3x3x3';
+  }
 
   /**
    * Helper method to handle equator rotation with error handling
    */
   private async handleEquatorRotation(clockwise: boolean): Promise<void> {
     try {
-      // Check if it's a 2x2 cube
-      if (this.is2x2Cube()) {
-        this.notificationSystem.show('Equator rotation not available on 2x2 cube', 'info');
+      // Check if it's an even-layered cube (2x2 or 4x4)
+      if (this.isEvenLayeredCube()) {
+        this.notificationSystem.show(`Equator rotation not available on ${this.getCurrentCubeType()} cube`, 'info');
         return;
       }
       
@@ -2387,6 +2657,12 @@ export class UIController {
             // Reset move count when importing a state
             this.moveCount = 0;
             
+            // Turn off blindfold mode if it's enabled
+            if (this.blindfoldModeEnabled) {
+              this.elements.appearance.blindfoldMode.checked = false;
+              this.toggleBlindfoldMode(false);
+            }
+            
             // Update the UI to reflect potential cube size/type change
             this.updateCubeSizeSelector();
             this.updateScrambleStepsInput();
@@ -2405,9 +2681,9 @@ export class UIController {
    */
   private async handleStandingRotation(clockwise: boolean): Promise<void> {
     try {
-      // Check if it's a 2x2 cube
-      if (this.is2x2Cube()) {
-        this.notificationSystem.show('Standing rotation not available on 2x2 cube', 'info');
+      // Check if it's an even-layered cube (2x2 or 4x4)
+      if (this.isEvenLayeredCube()) {
+        this.notificationSystem.show(`Standing rotation not available on ${this.getCurrentCubeType()} cube`, 'info');
         return;
       }
       

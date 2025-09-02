@@ -96,11 +96,11 @@ export class SceneManager {
    */
   private setupLighting(): void {
     // Ambient light for general illumination (tăng intensity)
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
     this.scene.add(ambientLight);
 
     // Main directional light (tăng intensity)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(10, 10, 5);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;
@@ -114,28 +114,33 @@ export class SceneManager {
     this.scene.add(directionalLight);
 
     // Fill light from the opposite side (tăng intensity)
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
     fillLight.position.set(-5, 5, -5);
     this.scene.add(fillLight);
 
     // Bottom light to illuminate the underside
-    const bottomLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const bottomLight = new THREE.DirectionalLight(0xffffff, 0.8);
     bottomLight.position.set(0, -10, 0);
     this.scene.add(bottomLight);
 
     // Rim light for edge definition (increased intensity)
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
     rimLight.position.set(0, 10, -10);
     this.scene.add(rimLight);
 
     // Additional side lights for uniform lighting
-    const leftLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    const leftLight = new THREE.DirectionalLight(0xffffff, 0.5);
     leftLight.position.set(-10, 0, 0);
     this.scene.add(leftLight);
 
-    const rightLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    const rightLight = new THREE.DirectionalLight(0xffffff, 0.5);
     rightLight.position.set(10, 0, 0);
     this.scene.add(rightLight);
+    
+    // Add a new back light to improve illumination of rear faces
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    backLight.position.set(0, 0, -10);
+    this.scene.add(backLight);
   }
 
   /**

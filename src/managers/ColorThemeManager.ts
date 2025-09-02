@@ -80,6 +80,30 @@ export class ColorThemeManager {
       top: '#8c8c8c',     // Light silver
       bottom: '#a6a6a6'   // Pale silver
     },
+    earth: {
+      front: '#8b4513',   // Brown
+      back: '#228b22',    // Forest green
+      right: '#dc143c',   // Crimson
+      left: '#daa520',    // Goldenrod
+      top: '#ffd700',     // Gold
+      bottom: '#f5f5dc'   // Beige
+    },
+    fire: {
+      front: '#ff4500',   // Orange red
+      back: '#ff1493',    // Deep pink
+      right: '#dc143c',   // Crimson
+      left: '#ff8c00',    // Dark orange
+      top: '#ffd700',     // Gold
+      bottom: '#fff8dc'   // Cornsilk
+    },
+    rainbow: {
+      front: '#ff0000',   // Red
+      back: '#ff7f00',    // Orange
+      right: '#ffff00',   // Yellow
+      left: '#00ff00',    // Green
+      top: '#0000ff',     // Blue
+      bottom: '#8b00ff'   // Violet
+    },
     // Gradient themes using linear-gradient CSS - simplified format for better compatibility
     gradientRainbow: {
       front: 'linear-gradient(45deg, #ff0000, #ff8000)',   // Red-Orange

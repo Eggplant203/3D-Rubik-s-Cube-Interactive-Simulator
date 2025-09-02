@@ -1,31 +1,29 @@
 # 3D Rubik's Cube Interactive Simulator
 
-A modern, interactive 3D Rubik's Cube web application built with TypeScript, Three.js, and Vite. This application allows users to interact with a virtual Rubik's Cube, practice solving techniques, track statistics, and more.
+A modern, interactive 3D Rubik's Cube web application built with TypeScript, Three.js, and Vite. This application allows users to interact with multiple virtual Rubik's Cube types (2x2, 3x3, and 4x4), practice solving techniques, and track statistics.
 
 ![3D Rubik's Cube](./picture/screenshot.png)
 
 ## Features
 
+- **Multiple Cube Types**: Support for 2x2, 3x3, and 4x4 Rubik's Cubes
 - **Fully Interactive 3D Cube**: Rotate faces, layers, and the entire cube in 3D space
 - **Multiple Control Methods**: Mouse drag, keyboard shortcuts, and touch support
-- **Solve Tracking**:
+- **Practice & Timer Modes**:
   - Move counter
   - Timer mode
-  - Statistics tracking (best time, average, history)
+  - Statistics tracking
 - **Practice Tools**:
   - Scramble function
   - Undo/Redo moves
   - Reset cube
-  - Animation speed control
+  - Reversed scramble option
 - **User Experience**:
   - Light/Dark theme toggle
   - Customizable color themes
-  - Sound effects (with mute option)
   - Responsive design for mobile and desktop
-  - Blindfold mode for advanced practice
 - **Visual Aids**:
-  - 2D net view of the cube state
-  - Reset camera view
+  - Camera controls
   - Hide/show UI elements
 
 ## Tech Stack
@@ -38,15 +36,21 @@ A modern, interactive 3D Rubik's Cube web application built with TypeScript, Thr
 ## Project Structure
 
 ```
+├── picture/             # Screenshots and images
 ├── public/              # Static assets
 ├── src/
 │   ├── config/          # Application constants and configuration
 │   ├── controllers/     # Input and UI controllers
 │   ├── core/            # Core cube logic and 3D scene management
+│   │   ├── rotation/    # Rotation logic components
+│   ├── examples/        # Example implementations
+│   ├── managers/        # State and settings managers
 │   ├── services/        # State management and persistence
 │   ├── utils/           # Helper utilities
 │   ├── main.ts          # Application entry point
-│   └── style.css        # Global styles
+│   ├── style.css        # Global styles
+│   ├── ui-enhancements.css  # UI-specific styles
+│   └── gradient-backgrounds.css # Background gradient styles
 └── index.html           # Main HTML entry
 ```
 
@@ -63,10 +67,27 @@ A modern, interactive 3D Rubik's Cube web application built with TypeScript, Thr
 
    ```bash
    git clone https://github.com/Eggplant203/3D-Rubik-s-Cube-Interactive-Simulator.git
-   cd rubik-3d
+   cd 3D-Rubik-s-Cube-Interactive-Simulator
    ```
 
 2. Install dependencies:
+
+   **Windows:**
+
+   ```bash
+   # Run the install.bat script
+   install.bat
+   ```
+
+   **Linux/Mac:**
+
+   ```bash
+   # Make the install script executable and run it
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+   **Manual installation:**
 
    ```bash
    npm install
@@ -105,6 +126,8 @@ The built files will be in the `dist` directory, ready for deployment.
 
 ### Keyboard Shortcuts
 
+Default key mappings (customizable in settings):
+
 - **F**: Rotate front face clockwise
 - **B**: Rotate back face clockwise
 - **R**: Rotate right face clockwise
@@ -117,13 +140,20 @@ The built files will be in the `dist` directory, ready for deployment.
 - **S**: Rotate standing layer
 - **X/Y/Z**: Rotate entire cube along X/Y/Z axis
 
+Alternative key mapping presets are available in the settings (QWERTY optimized and left-handed).
+
 ## Customization
 
-The cube's appearance, colors, and animation speeds can be customized through the settings panel.
+The application includes extensive customization options:
+
+- **Cube Types**: Switch between 2x2, 3x3, and 4x4 cubes
+- **Color Themes**: Choose from various color schemes
+- **Key Mappings**: Select from different keyboard mapping presets
+- **Interface Options**: Toggle UI elements visibility and theme
 
 ## Performance Optimization
 
-The application uses efficient rendering techniques and optimized Three.js implementations to ensure smooth performance even on lower-end devices.
+The application uses efficient rendering techniques and optimized Three.js implementations to ensure smooth performance even on lower-end devices. The architecture is structured with clean separation of concerns for better maintainability and extensibility.
 
 ## Contributing
 
@@ -138,6 +168,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Three.js for 3D rendering
 - Vite for fast development and building
 - Font Awesome for UI icons
+- CDN libraries for enhanced interface elements
 
 ## Author
 

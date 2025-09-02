@@ -202,36 +202,41 @@ export class CubeConfigurationFactory {
 
   /**
    * Calculate optimal cube size for visual clarity
+   * Using 3x3x3 as baseline (1.7):
+   * - 2x2x2: 1.5 times larger (2.55)
+   * - 4x4x4: 1.27 times smaller (1.34)
+   * - Other sizes scale progressively smaller for larger cubes
    */
   private static calculateOptimalCubeSize(size: number): number {
-    // Smaller individual cubelets for larger cubes
+    // Size ratios based on 3x3x3 as the baseline
     const sizeMap: { [key: number]: number } = {
-      2: 1.5,  // Reduced from 2.5 to make 2x2 cube more compact
-      3: 1.7,  // Reduced from 2.0 to make 3x3 cube more compact
-      4: 1.7,
-      5: 1.5,
-      6: 1.3,
-      7: 1.2
+      2: 2.55,  // 1.5 times larger than 3x3x3
+      3: 1.7,   // Baseline size
+      4: 1.34,  // 1.27 times smaller than 3x3x3
+      5: 1.2,   // Progressively smaller for larger cubes
+      6: 1.0,
+      7: 0.9
     };
     
-    return sizeMap[size] || Math.max(0.8, 2.5 - (size - 2) * 0.2);
+    return sizeMap[size] || Math.max(0.8, 1.7 - (size - 4) * 0.15);
   }
 
   /**
    * Calculate optimal spacing between cubelets
+   * Using consistent spacing values from constants.ts
    */
   private static calculateOptimalSpacing(size: number): number {
-    // Smaller spacing for larger cubes to keep them visually compact
+    // Spacing values consistent with STANDARD_CUBE_CONFIGS
     const spacingMap: { [key: number]: number } = {
-      2: 0.02,  // Reduced from 0.15 to make 2x2 cube more compact
-      3: 0.02,  // Reduced from 0.1 to make 3x3 cube more compact, consistent with 2x2
-      4: 0.08,
-      5: 0.06,
-      6: 0.05,
-      7: 0.04
+      2: 0.02,  // Same as in constants.ts
+      3: 0.02,  // Same as in constants.ts
+      4: 0.01,  // Same as in constants.ts
+      5: 0.01,  // Consistently small for larger cubes
+      6: 0.01,
+      7: 0.01
     };
     
-    return spacingMap[size] || Math.max(0.02, 0.15 - (size - 2) * 0.015);
+    return spacingMap[size] || Math.max(0.01, 0.02 - (size - 3) * 0.002);
   }
 
   /**

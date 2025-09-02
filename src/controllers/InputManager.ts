@@ -10,9 +10,6 @@ interface InputHandler {
   dispose(): void;
 }
 
-/**
- * Manages keyboard input for cube operations
- */
 export class KeyboardController implements InputHandler {
   private cube: RubiksCube;
   private enabled: boolean = false;
@@ -38,12 +35,15 @@ export class KeyboardController implements InputHandler {
     shift: 'shift'
   };
 
+  private keyUpHandler: (event: KeyboardEvent) => void;
+
   constructor(cube: RubiksCube, getSaveRecordEnabled: () => boolean, getIsTimerRunning: () => boolean, uiController?: UIController | null) {
     this.cube = cube;
     this.getSaveRecordEnabled = getSaveRecordEnabled;
     this.getIsTimerRunning = getIsTimerRunning;
     this.uiController = uiController || null;
     this.keyDownHandler = this.onKeyDown.bind(this);
+    this.keyUpHandler = this.onKeyUp.bind(this);
   }
 
   /**
@@ -52,7 +52,29 @@ export class KeyboardController implements InputHandler {
   public enable(): void {
     if (!this.enabled) {
       window.addEventListener('keydown', this.keyDownHandler);
+      window.addEventListener('keyup', this.keyUpHandler);
       this.enabled = true;
+    }
+  }
+  
+  /**
+   * Disable keyboard controls
+   */
+  public disable(): void {
+    if (this.enabled) {
+      window.removeEventListener('keydown', this.keyDownHandler);
+      window.removeEventListener('keyup', this.keyUpHandler);
+      this.enabled = false;
+    }
+  }
+  
+  /**
+   * Handle key up event
+   */
+  private onKeyUp(event: KeyboardEvent): void {
+    // Reset the '2' key state when it's released
+    if (event.key === '2') {
+      this.is2KeyPressed = false;
     }
   }
 
@@ -86,13 +108,11 @@ export class KeyboardController implements InputHandler {
   }
 
   /**
-   * Disable keyboard controls
+   * Dispose keyboard controller
    */
-  public disable(): void {
-    if (this.enabled) {
-      window.removeEventListener('keydown', this.keyDownHandler);
-      this.enabled = false;
-    }
+  public dispose(): void {
+    this.disable();
+    // Clean up any other resources
   }
 
   /**
@@ -133,6 +153,12 @@ export class KeyboardController implements InputHandler {
       return event.key.toLowerCase();
     }
   }
+  // Track if the '2' key is pressed for middle layer rotations
+  private is2KeyPressed = false;
+  
+  /**
+   * Handle key down event
+   */
   private onKeyDown(event: KeyboardEvent): void {
     if (!this.enabled) {
       return;
@@ -146,6 +172,11 @@ export class KeyboardController implements InputHandler {
 
     const isShiftPressed = event.shiftKey;
     const isCtrlPressed = event.ctrlKey;
+    
+    // Track '2' key state for middle layer rotations
+    if (event.key === '2') {
+      this.is2KeyPressed = true;
+    }
     
     // Handle undo/redo with Ctrl+Z/Y
     if (isCtrlPressed && event.key.toLowerCase() === 'z' && !event.shiftKey) {
@@ -199,40 +230,146 @@ export class KeyboardController implements InputHandler {
     // Only handle cube rotation keys, avoid UI conflicts
     let normalizedKey = this.getNormalizedKey(event);
 
-    // Check if cube is 2x2 and disable middle slice moves
-    const is2x2Cube = (this.cube as any).getCubeType && (this.cube as any).getCubeType() === '2x2x2';
+    // Check if cube is even-layered (2x2 or 4x4) and disable middle slice moves
+    const cubeType = (this.cube as any).getCubeType?.() || 'unknown';
+    const is2x2Cube = cubeType === '2x2x2'; 
+    const isEvenLayeredCube = is2x2Cube || cubeType === '4x4x4';
     
-    console.log('Keyboard input:', normalizedKey, 
-                'Is 2x2 cube:', is2x2Cube, 
-                'Cube type:', (this.cube as any).getCubeType?.() || 'unknown');
+    // Process keyboard input for cube rotation
     
+    // Handle face rotations with middle layer variations when '2' is pressed
     if (normalizedKey === this.keyMappings.front) {
       event.preventDefault();
-      this.cube.rotateFace('FRONT', isShiftPressed);
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('FRONT', isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('FRONT', isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.back) {
       event.preventDefault();
-      this.cube.rotateFace('BACK', !isShiftPressed);
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('BACK', !isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('BACK', !isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.right) {
       event.preventDefault();
-      this.cube.rotateFace('RIGHT', isShiftPressed);
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('RIGHT', isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('RIGHT', isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.left) {
       event.preventDefault();
-      this.cube.rotateFace('LEFT', !isShiftPressed);
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('LEFT', !isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('LEFT', !isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.up) {
       event.preventDefault();
-      this.cube.rotateFace('TOP', isShiftPressed);
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('TOP', isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('TOP', isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.down) {
       event.preventDefault();
-      this.cube.rotateFace('BOTTOM', !isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.middle && !is2x2Cube) {
+      if (this.is2KeyPressed) {
+        if (cubeType === '4x4x4') {
+          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+          (this.cube as any).rotateInnerSlice('BOTTOM', !isShiftPressed);
+        } else {
+          // Show notification that 2 + key is only available for 4x4x4
+          if (this.uiController) {
+            this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
+          }
+        }
+      } else {
+        this.cube.rotateFace('BOTTOM', !isShiftPressed);
+      }
+    } else if (normalizedKey === this.keyMappings.middle) {
       event.preventDefault();
-      this.cube.rotateMiddle(!isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.equator && !is2x2Cube) {
+      if (isEvenLayeredCube) {
+        // Show notification for disabled middle slice moves on even-layered cubes
+        if (this.uiController) {
+          this.uiController.showNotification(
+            `Middle slice moves are not available for ${cubeType} cube`,
+            'info',
+            2000
+          );
+        }
+      } else {
+        this.cube.rotateMiddle(!isShiftPressed);
+      }
+    } else if (normalizedKey === this.keyMappings.equator) {
       event.preventDefault();
-      this.cube.rotateEquator(!isShiftPressed);
-    } else if (normalizedKey === this.keyMappings.standing && !is2x2Cube) {
+      if (isEvenLayeredCube) {
+        // Show notification for disabled middle slice moves on even-layered cubes
+        if (this.uiController) {
+          this.uiController.showNotification(
+            `Equator rotation is not available for ${cubeType} cube`,
+            'info',
+            2000
+          );
+        }
+      } else {
+        this.cube.rotateEquator(!isShiftPressed);
+      }
+    } else if (normalizedKey === this.keyMappings.standing) {
       event.preventDefault();
-      this.cube.rotateStanding(isShiftPressed);
+      if (isEvenLayeredCube) {
+        // Show notification for disabled middle slice moves on even-layered cubes
+        if (this.uiController) {
+          this.uiController.showNotification(
+            `Standing rotation is not available for ${cubeType} cube`,
+            'info',
+            2000
+          );
+        }
+      } else {
+        this.cube.rotateStanding(isShiftPressed);
+      }
     } else if (normalizedKey === this.keyMappings.cubeX) {
       event.preventDefault();
       this.cube.rotateCubeX(isShiftPressed);
@@ -242,15 +379,7 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.cubeZ) {
       event.preventDefault();
       this.cube.rotateCubeZ(isShiftPressed);
-    } else if (is2x2Cube && (normalizedKey === this.keyMappings.middle || normalizedKey === this.keyMappings.equator || normalizedKey === this.keyMappings.standing)) {
-      // Show notification for disabled middle slice moves on 2x2
-      if (this.uiController) {
-        this.uiController.showNotification(
-          'Middle slice moves are not available for 2x2x2 cube',
-          'info',
-          2000
-        );
-      }
+    // We've already handled '2' key + face key combinations in the above conditionals
     } else {
       // Handle corner rotations with Ctrl + number (1-8)
       switch (normalizedKey) {
@@ -338,8 +467,9 @@ export class KeyboardController implements InputHandler {
    * Execute a single move
    */
   private async executeSingleMove(key: string, isPrime: boolean): Promise<void> {
-    // Check if cube is 2x2 and disable middle slice moves
-    const is2x2Cube = (this.cube as any).getCubeType && (this.cube as any).getCubeType() === '2x2x2';
+    // Check if cube is even-layered (2x2 or 4x4) and disable middle slice moves
+    const cubeType = (this.cube as any).getCubeType ? (this.cube as any).getCubeType() : '3x3x3';
+    const isEvenLayeredCube = cubeType === '2x2x2' || cubeType === '4x4x4';
 
     switch (key.toLowerCase()) {
       case 'f':
@@ -361,20 +491,26 @@ export class KeyboardController implements InputHandler {
         await this.cube.rotateFace('BOTTOM', !isPrime);
         break;
       case 'm':
-        if (is2x2Cube) {
-          throw new Error('Middle slice moves are not available for 2x2x2 cube');
+        // If it's a 4x4 cube and this is part of a wide move sequence (which is handled elsewhere)
+        // Or if we're in a wide move context (like r = R + M'), just silently ignore
+        if (isEvenLayeredCube) {
+          return; // Just return without error or notification to prevent sequence execution failure
         }
         await this.cube.rotateMiddle(!isPrime);
         break;
       case 'e':
-        if (is2x2Cube) {
-          throw new Error('Equator moves are not available for 2x2x2 cube');
+        // If it's a 4x4 cube and this is part of a wide move sequence 
+        // Or if we're in a wide move context, just silently ignore
+        if (isEvenLayeredCube) {
+          return; // Just return without error or notification
         }
         await this.cube.rotateEquator(!isPrime);
         break;
       case 's':
-        if (is2x2Cube) {
-          throw new Error('Standing moves are not available for 2x2x2 cube');
+        // If it's a 4x4 cube and this is part of a wide move sequence
+        // Or if we're in a wide move context, just silently ignore
+        if (isEvenLayeredCube) {
+          return; // Just return without error or notification
         }
         await this.cube.rotateStanding(isPrime);
         break;
@@ -392,12 +528,7 @@ export class KeyboardController implements InputHandler {
     }
   }
 
-  /**
-   * Cleanup event listeners
-   */
-  public dispose(): void {
-    this.disable();
-  }
+  // We already have a dispose method in the class
 }
 
 /**

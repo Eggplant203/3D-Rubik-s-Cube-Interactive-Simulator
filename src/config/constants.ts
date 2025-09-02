@@ -64,15 +64,22 @@ export const ROTATION_AXES = {
 /**
  * Standardized configuration values for different cube types
  * This ensures consistent cubelet sizes and spacing across the application
+ * Using 3x3x3 cubelet size as the baseline:
+ * - 2x2x2: 1.5 times larger than 3x3x3
+ * - 4x4x4: 1.27 times smaller than 3x3x3
  */
 export const STANDARD_CUBE_CONFIGS = {
   '2x2x2': {
-    cubeSize: 1.5,  // Slightly smaller cubelet for 2x2
-    spacing: 0.02   // Minimal spacing between cubelets
+    cubeSize: 2.55,  // 1.5 times larger than 3x3x3 (1.7 × 1.5)
+    spacing: 0.02    // Minimal spacing between cubelets
   },
   '3x3x3': {
-    cubeSize: 1.7,  // Standard cubelet size
-    spacing: 0.02   // Standard spacing
+    cubeSize: 1.7,   // Standard cubelet size (baseline)
+    spacing: 0.02    // Standard spacing
+  },
+  '4x4x4': {
+    cubeSize: 1.34,  // 1.27 times smaller than 3x3x3 (1.7 ÷ 1.27)
+    spacing: 0.015    // Minimal spacing between cubelets
   }
 };
 
@@ -90,6 +97,10 @@ export function standardizeCubeConfig(cubeType: string): void {
     CUBE_CONFIG.size = 3;
     CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['3x3x3'].cubeSize;
     CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['3x3x3'].spacing;
+  } else if (cubeType === '4x4x4') {
+    CUBE_CONFIG.size = 4;
+    CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['4x4x4'].cubeSize;
+    CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['4x4x4'].spacing;
   }
   // Additional cube types can be added here
   

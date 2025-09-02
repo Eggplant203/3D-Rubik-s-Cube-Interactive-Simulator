@@ -2,6 +2,7 @@ import { CubeConfiguration, CubeConfigurationFactory } from '../config/CubeConfi
 import { CUBE_CONFIG, standardizeCubeConfig } from '../config/constants';
 import { RubiksCube } from '../core/RubiksCube';
 import { RubiksCube2x2 } from '../core/RubiksCube2x2';
+import { RubiksCube4x4 } from '../core/RubiksCube4x4';
 import { SceneManager } from '../core/SceneManager';
 import { SettingsManager } from './SettingsManager';
 import { ColorThemeManager } from './ColorThemeManager';
@@ -79,11 +80,11 @@ export class CubeTypeManager {
       
       // Ensure settings and displayed cube are in sync on page refresh
       if (savedSize !== undefined) {
-        console.log(`Initializing with saved cube size: ${savedSize}`);
+
         this.switchToCubeSize(savedSize);
       } else {
         // Default to 3x3 if no saved size
-        console.log('No saved cube size found, defaulting to 3x3');
+
         this.switchToCubeSize(3);
       }
       
@@ -134,11 +135,20 @@ export class CubeTypeManager {
 
       // Update CUBE_CONFIG with new size and standardize configuration
       CUBE_CONFIG.size = size;
-      standardizeCubeConfig(size === 2 ? '2x2x2' : '3x3x3');
+      
+      if (size === 2) {
+        standardizeCubeConfig('2x2x2');
+      } else if (size === 4) {
+        standardizeCubeConfig('4x4x4');
+      } else {
+        standardizeCubeConfig('3x3x3');
+      }
       
       // Create new cube with new configuration
       if (size === 2) {
         this.currentCube = new RubiksCube2x2(this.sceneManager.getScene());
+      } else if (size === 4) {
+        this.currentCube = new RubiksCube4x4(this.sceneManager.getScene());
       } else {
         this.currentCube = new RubiksCube(this.sceneManager.getScene());
       }
@@ -164,7 +174,7 @@ export class CubeTypeManager {
       this.settingsManager.set('scrambleSteps', scrambleSteps);
       
       // Log for debugging
-      console.log(`Switched to cube size ${size} with scramble steps ${scrambleSteps}`);
+
 
       // Trigger callbacks
       this.triggerCubeChangeCallbacks();
