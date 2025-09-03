@@ -1334,6 +1334,9 @@ export class UIController {
     const moves: Array<{type: string, face?: string, clockwise: boolean, double?: boolean, invalid2x2?: boolean}> = [];
     let processedSequence = sequence;
 
+    // Replace note shortcuts (starting with !)
+    processedSequence = this.expandNoteShortcuts(processedSequence);
+
     // Replace grouped moves with repetition for both () and []
     processedSequence = processedSequence.replace(/\(\s*([^)]+)\s*\)(\d+)?/g, (_, group, rep) => {
       const repetition = rep ? parseInt(rep) : 1;
@@ -2840,12 +2843,20 @@ export class UIController {
     this.savedNotes.forEach(note => {
       const noteElement = document.createElement('div');
       noteElement.className = 'saved-note-item';
+      
+      // Add shortcut class for all notes since they can all be used as shortcuts
+      noteElement.classList.add('shortcut-note');
 
       const titleElement = document.createElement('div');
       titleElement.className = 'saved-note-title';
 
       const titleText = document.createElement('span');
       titleText.textContent = note.title;
+      
+      // Add tooltip for shortcut notes
+      if (note.title.startsWith('!')) {
+        titleText.title = 'This is a shortcut note. Use it in Sequence Input to expand its content.';
+      }
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-note-btn';
@@ -2858,9 +2869,54 @@ export class UIController {
       const contentElement = document.createElement('div');
       contentElement.className = 'saved-note-content';
       contentElement.textContent = note.content;
+      contentElement.title = 'Click to copy to Sequence Input';
 
       noteElement.appendChild(titleElement);
       noteElement.appendChild(contentElement);
+      
+      // Add click event to note content to copy to sequence input
+      contentElement.style.cursor = 'pointer';
+      contentElement.title = 'Click to use in Sequence Input';
+      contentElement.onclick = () => {
+        if (this.elements.sequence.sequenceInput) {
+          this.elements.sequence.sequenceInput.value = note.content;
+          this.elements.sequence.sequenceInput.focus();
+          // Switch to Controls tab
+          this.switchTab('controls');
+        }
+      };
+      
+      // Add click event to all titles to insert shortcut reference in sequence input
+      titleText.style.cursor = 'pointer';
+      titleText.title = 'Click to insert shortcut reference in Sequence Input';
+      titleText.onclick = (e) => {
+        e.stopPropagation();
+        if (this.elements.sequence.sequenceInput) {
+          const currentValue = this.elements.sequence.sequenceInput.value;
+          const cursorPos = this.elements.sequence.sequenceInput.selectionStart || 0;
+          const textBefore = currentValue.substring(0, cursorPos);
+          const textAfter = currentValue.substring(cursorPos);
+          
+          // Create the shortcut reference with ! prefix and add a space before it
+          const shortcutRef = note.title.startsWith('!') ? note.title : `!${note.title}`;
+          
+          // Add a space before the shortcut if there isn't one already
+          const needsSpace = textBefore.length > 0 && !textBefore.endsWith(' ');
+          const spacer = needsSpace ? ' ' : '';
+          
+          // Insert the shortcut at cursor position with a space before if needed
+          this.elements.sequence.sequenceInput.value = `${textBefore}${spacer}${shortcutRef}${textAfter}`;
+          
+          // Set cursor position after the inserted shortcut, accounting for the space
+          const newPosition = cursorPos + shortcutRef.length + (needsSpace ? 1 : 0);
+          this.elements.sequence.sequenceInput.selectionStart = newPosition;
+          this.elements.sequence.sequenceInput.selectionEnd = newPosition;
+          
+          this.elements.sequence.sequenceInput.focus();
+          // Switch to Controls tab
+          this.switchTab('controls');
+        }
+      };
 
       this.elements.notes.savedNotes.appendChild(noteElement);
     });
@@ -2874,6 +2930,70 @@ export class UIController {
     this.saveNotesToStorage();
     this.renderSavedNotes();
     this.notificationSystem.show('Note deleted successfully!', 'success');
+  }
+  
+  /**
+   * Helper function to escape special characters in a string for use in RegExp
+   */
+  private escapeRegExp(string: string): string {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Expand note shortcuts in a sequence string
+   * Finds all occurrences of !title (where title is the name of a note) and replaces them with the note's content
+   * This is done recursively to handle nested shortcuts
+   */
+  private expandNoteShortcuts(sequence: string, processedShortcuts: Set<string> = new Set()): string {
+    // Regular expression to match !title without spaces (!abc, !F, !123, etc.)
+    const shortcutRegex = /!([^\s]+)/g;
+    let result = sequence;
+    
+    // Track already processed shortcuts to prevent infinite recursion
+    const newProcessedShortcuts = new Set(processedShortcuts);
+    
+    // Extract all matches first, then process them
+    const matches: { fullMatch: string; title: string }[] = [];
+    let match;
+    
+    // Collect all matches first
+    while ((match = shortcutRegex.exec(sequence)) !== null) {
+      const fullMatch = match[0]; // The full match including ! (e.g. !abc)
+      const shortcutTitle = match[1]; // Just the title without ! (e.g. abc)
+      
+      // Skip if this shortcut has already been processed (prevents infinite recursion)
+      if (!newProcessedShortcuts.has(shortcutTitle)) {
+        matches.push({ fullMatch, title: shortcutTitle });
+      }
+    }
+    
+    // Process each match
+    for (const { fullMatch, title } of matches) {
+      // First try to find a note with the exact title (with !)
+      let note = this.savedNotes.find(note => note.title === title);
+      
+      // If not found, try to find a note with the title without the ! prefix
+      if (!note) {
+        note = this.savedNotes.find(note => note.title === title || note.title === '!' + title);
+      }
+      
+      if (note) {
+        // Mark this shortcut as processed
+        newProcessedShortcuts.add(title);
+        
+        // Replace all occurrences of the shortcut with the note content
+        // Use a global regex to replace all instances
+        result = result.replace(new RegExp(this.escapeRegExp(fullMatch), 'g'), note.content);
+      }
+    }
+    
+    // Check if we need to do another pass (if any shortcuts were expanded)
+    if (result !== sequence) {
+      // Recursively process the resulting string to handle nested shortcuts
+      result = this.expandNoteShortcuts(result, newProcessedShortcuts);
+    }
+    
+    return result;
   }
 
   /**

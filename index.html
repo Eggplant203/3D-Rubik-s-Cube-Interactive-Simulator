@@ -221,7 +221,7 @@
               <div class="control-group sequence-input-top">
                 <label>Sequence Input</label>
                 <div class="sequence-input-group">
-                  <input type="text" id="sequenceInput" class="sequence-input" placeholder="e.g: R L' B2 F' F" />
+                  <input type="text" id="sequenceInput" class="sequence-input" placeholder="e.g: R L' B2 or !formula" title="Use !title to insert content of any saved note from the Notes tab" />
                   <button id="executeSequenceBtn" class="btn btn-primary btn-small">Execute</button>
                 </div>
                 <div class="sequence-feedback" id="sequenceFeedback"></div>
@@ -306,10 +306,10 @@
                 <hr>
               </div>
               <div class="control-group">
-                <input type="text" id="noteTitle" placeholder="Formula title..." class="note-input">
+                <input type="text" id="noteTitle" placeholder="Formula title..." class="note-input" title="All notes can be used as shortcuts in Sequence Input with !title syntax.">
               </div>
               <div class="control-group">
-                <textarea id="noteContent" placeholder="Enter your Rubik's cube formula here..." class="note-textarea"></textarea>
+                <textarea id="noteContent" placeholder="Enter your Rubik's cube formula here..." class="note-textarea" title="Reference this note in Sequence Input with !title to expand this content"></textarea>
               </div>
               <div class="note-controls">
                 <button id="saveNoteBtn" class="btn btn-small btn-success">
@@ -326,6 +326,10 @@
                 <button id="importNotesBtn" class="btn btn-small btn-warning">
                   <i class="fas fa-upload"></i> Import<br>Notes
                 </button>
+              </div>
+              
+              <div class="shortcut-note-help">
+                <p><i class="fas fa-info-circle"></i> Use notes as shortcuts in Sequence Input by typing !title (e.g., !F or !OLL) or by clicking title.</p>
               </div>
             </div>
           </div>

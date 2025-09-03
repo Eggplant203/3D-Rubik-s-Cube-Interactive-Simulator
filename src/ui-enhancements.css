@@ -14,7 +14,31 @@
   border-radius: 3px;
 }
 
-.pan.note-controls {
+.note-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.saved-notes {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.shortcut-note-help {
+  background-color: rgba(100, 108, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.note-import-export {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
@@ -377,6 +401,25 @@ select:focus-visible {
 .saved-note-item:hover {
   border-color: var(--accent-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shortcut-note {
+  border-left: 3px solid var(--primary-color);
+  background: linear-gradient(to right, rgba(100, 108, 255, 0.05), var(--bg-secondary) 20%);
+}
+
+.shortcut-note .saved-note-title {
+  color: var(--text-primary);
+}
+
+.saved-note-content:hover {
+  background-color: rgba(100, 108, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.saved-note-title span:hover {
+  text-decoration: underline;
+  color: var(--primary-color);
 }
 
 .saved-note-title {
