@@ -117,6 +117,12 @@ export class CubeStateManager {
       const cubeType = data.cubeType || '3x3x3';
       standardizeCubeConfig(cubeType);
       
+      // Clear move history when loading a new state
+      // Access the cube's clearMoveHistory method if available
+      if (typeof this.rubiksCube['clearMoveHistory'] === 'function') {
+        this.rubiksCube['clearMoveHistory']();
+      }
+      
       // Set 2D cube state using rotationLogic
       try {
 
@@ -228,6 +234,78 @@ export class CubeStateManager {
 
     for (let i = 0; i < 6; i++) {
       const color = cubelet.colors[i] || '#333333';
+            
+      // Check if color value is a gradient (starts with 'linear-gradient')
+      if (typeof color === 'string' && color.startsWith('linear-gradient')) {
+        // Create a canvas texture for gradient
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Parse gradient
+          const gradientMatch = color.match(/linear-gradient\(([^,]+),\s*([^,]+),\s*([^)]+)\)/);
+          if (gradientMatch) {
+            const direction = gradientMatch[1];
+            const color1 = gradientMatch[2].trim();
+            const color2 = gradientMatch[3].trim();
+            
+            // Create gradient based on direction
+            let gradient;
+            if (direction.includes('45deg')) {
+              gradient = ctx.createLinearGradient(0, 0, 256, 256);
+            } else if (direction.includes('135deg')) {
+              gradient = ctx.createLinearGradient(0, 256, 256, 0);
+            } else if (direction.includes('to right')) {
+              gradient = ctx.createLinearGradient(0, 0, 256, 0);
+            } else {
+              // Default to vertical gradient
+              gradient = ctx.createLinearGradient(0, 0, 0, 256);
+            }
+            
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Create texture
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            
+            // Create material with gradient texture
+            const material = new THREE.MeshPhongMaterial({ 
+              map: texture,
+              color: 0xffffff,
+              transparent: false,
+              opacity: 1.0,
+              shininess: 100,
+              specular: 0x222222
+            });
+            
+            materials.push(material);
+          } else {
+            // Fallback to solid color
+            materials.push(new THREE.MeshPhongMaterial({ 
+              color: color,
+              transparent: false,
+              opacity: 1.0,
+              shininess: 100,
+              specular: 0x222222
+            }));
+          }
+        } else {
+          // Fallback if canvas context not available
+          materials.push(new THREE.MeshPhongMaterial({ 
+            color: color,
+            transparent: false,
+            opacity: 1.0,
+            shininess: 100,
+            specular: 0x222222
+          }));
+        }
+      } else {
+        // Regular color
       materials.push(new THREE.MeshPhongMaterial({ 
         color: color,
         transparent: false,
@@ -235,6 +313,7 @@ export class CubeStateManager {
         shininess: 100,
         specular: 0x222222
       }));
+    }
     }
 
     // Update the mesh materials - the cube mesh is the first child
@@ -345,6 +424,7 @@ export class CubeStateManager {
             standardizeCubeConfig(cubeTypeStr);
           }
 
+          // Load state from imported data (this will also clear move history)
           this.loadState(data);
           resolve();
         } catch (error) {
@@ -459,6 +539,7 @@ export class CubeStateManager {
           }
         }
         
+        // Load state from localStorage (this will also clear move history)
         this.loadState(data);
         return true;
       }

@@ -331,6 +331,14 @@ export class RubiksCube4x4 extends RubiksCube {
   public getCubeType(): string {
     return '4x4x4';
   }
+  
+  /**
+   * Easing function for smooth animations
+   * Simple cubic ease in/out
+   */
+  protected easingFunction(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
 
   /**
    * Get complexity level
@@ -372,34 +380,34 @@ export class RubiksCube4x4 extends RubiksCube {
    * Inner slice rotation for 4x4x4 cube (second layer from outside)
    */
   public async rotateInnerSlice(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
-    if ((this as any).animating) return;
+    if (this.isAnimating()) return;
     
     // Add to move history if not skipping
     if (!skipHistory) {
-      (this as any).moveHistory = (this as any).moveHistory.slice(0, (this as any).historyIndex + 1);
-      (this as any).moveHistory.push({ type: 'innerSlice', face, clockwise });
-      (this as any).historyIndex++;
+      this.addMoveToHistory({ type: 'innerSlice', face, clockwise });
     }
 
     // Call onMove callback
-    if ((this as any).onMove) {
-      (this as any).onMove();
+    if (this.onMove) {
+      this.onMove();
     }
     
-    (this as any).animating = true;
+    // Use a protected method instead of accessing private property
+    this.startAnimation();
     const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
     
     // Get cubelets for the inner slice - layer 2 from the outside
     const cubelets = this.getInnerSliceCubelets(face);
-    const axis = (this as any).getFaceAxis(face);
+    // Use parent method to get face axis
+    const axis = this.getFaceRotationAxis(face);
     
-    // Play rotation sound (optional)
-    (this as any).playRotationSound();
+    // Play rotation sound
+    this.playSound('rotate');
     
     // Create a temporary group to handle rotation animation
     const rotationGroup = new THREE.Group();
     this.getCubeGroup().add(rotationGroup);
-    (this as any).currentRotationGroup = rotationGroup;
+    this.setCurrentRotationGroup(rotationGroup);
     
     // Move cubelets to rotation group
     cubelets.forEach(cubelet => {
@@ -409,29 +417,31 @@ export class RubiksCube4x4 extends RubiksCube {
     
     return new Promise((resolve) => {
       const startTime = Date.now();
-      const duration = (this as any).animationDuration;
+      const duration = CUBE_CONFIG.animation.transitionDuration;
       
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const currentAngle = angle * (this as any).easeInOutBack(progress);
+        const currentAngle = angle * this.easingFunction(progress);
         
         // Reset rotation and apply new rotation
         rotationGroup.rotation.set(0, 0, 0);
         rotationGroup.rotateOnAxis(axis, currentAngle);
         
         if (progress < 1) {
-          (this as any).animationFrameId = requestAnimationFrame(animate);
+          // Store animation frame ID for possible cancellation
+          const animationFrameId = requestAnimationFrame(animate);
+          this.setAnimationFrameId(animationFrameId);
         } else {
           // Animation complete - finalize positions
-          (this as any).finalizeRotation(cubelets, rotationGroup, axis, angle);
+          this.finalizeSliceRotation(cubelets, rotationGroup, axis, angle);
           this.getCubeGroup().remove(rotationGroup);
-          (this as any).currentRotationGroup = null;
-          (this as any).animating = false;
+          this.setCurrentRotationGroup(null);
+          this.stopAnimation();
           
           // Check if cube is solved
-          if (this.isSolved() && (this as any).onSolveComplete) {
-            (this as any).onSolveComplete();
+          if (this.isSolved() && this.onSolveComplete) {
+            this.onSolveComplete();
           }
           
           resolve();
@@ -447,7 +457,7 @@ export class RubiksCube4x4 extends RubiksCube {
    */
   public reset(): void {
     // Stop any ongoing animation first
-    (this as any).stopAnimation();
+    this.stopAnimation();
     
     // Set config for 4x4x4 cube
     CUBE_CONFIG.size = 4;
@@ -466,6 +476,9 @@ export class RubiksCube4x4 extends RubiksCube {
         }
       }
     }
+    
+    // Clear move history
+    this.clearMoveHistory();
     
     // Reset cube state
     (this as any).rotationLogic.reset();
@@ -650,5 +663,52 @@ export class RubiksCube4x4 extends RubiksCube {
     });
     
     return filteredCubelets;
+  }
+  
+  /**
+   * Override the solve method for 4x4x4 cube to correctly handle inner slice rotations
+   */
+  public async solve(): Promise<void> {
+    if (this.isAnimating()) return;
+    
+    // Reverse all moves for 4x4 cube
+    const reverseMoves = [...this.getMoveHistory()].reverse();
+    
+    for (const move of reverseMoves) {
+      switch (move.type) {
+        case 'face':
+          if (move.face) {
+            await this.rotateFace(move.face as FaceType, !move.clockwise);
+          }
+          break;
+        case 'middle':
+          await this.rotateMiddle(!move.clockwise);
+          break;
+        case 'equator':
+          await this.rotateEquator(!move.clockwise);
+          break;
+        case 'standing':
+          await this.rotateStanding(!move.clockwise);
+          break;
+        case 'innerSlice':
+          // Handle inner slice rotations for 4x4x4 cube
+          if (move.face) {
+            await this.rotateInnerSlice(move.face as FaceType, !move.clockwise);
+          }
+          break;
+        case 'cubeX':
+          await this.rotateCubeX(!move.clockwise);
+          break;
+        case 'cubeY':
+          await this.rotateCubeY(!move.clockwise);
+          break;
+        case 'cubeZ':
+          await this.rotateCubeZ(!move.clockwise);
+          break;
+      }
+    }
+    
+    // Clear history after solving
+    this.clearMoveHistory();
   }
 }

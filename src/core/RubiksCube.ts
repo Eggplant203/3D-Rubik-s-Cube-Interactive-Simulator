@@ -43,7 +43,7 @@ export class RubiksCube {
   
   // Move history for undo/redo
   private moveHistory: Array<{ 
-    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ'; 
+    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice'; 
     face?: keyof typeof FACES; 
     clockwise: boolean 
   }> = [];
@@ -89,12 +89,95 @@ export class RubiksCube {
     
     this.animating = false;
   }
+  
+  /**
+   * Start animation (protected method for subclasses)
+   */
+  protected startAnimation(): void {
+    this.animating = true;
+  }
+  
+  /**
+   * Get face rotation axis (protected method for subclasses)
+   */
+  protected getFaceRotationAxis(face: keyof typeof FACES): THREE.Vector3 {
+    return this.getFaceAxis(face);
+  }
+  
+  /**
+   * Set current rotation group (protected method for subclasses)
+   */
+  protected setCurrentRotationGroup(group: THREE.Group | null): void {
+    this.currentRotationGroup = group;
+  }
+  
+  /**
+   * Set animation frame ID (protected method for subclasses)
+   */
+  protected setAnimationFrameId(id: number | null): void {
+    this.animationFrameId = id;
+  }
+  
+  /**
+   * Finalize slice rotation (protected method for subclasses)
+   */
+  protected finalizeSliceRotation(
+    cubelets: Cubelet[],
+    rotationGroup: THREE.Group, 
+    axis: THREE.Vector3, 
+    angle: number
+  ): void {
+    this.finalizeRotation(cubelets, rotationGroup, axis, angle);
+  }
+  
+  /**
+   * Play sound (protected method for subclasses)
+   */
+  protected playSound(type: string): void {
+    if (type === 'rotate') {
+      this.playRotationSound();
+    } else if (type === 'solve') {
+      // Handle solve sound if needed
+    }
+  }
 
   /**
    * Check if cube is currently animating
    */
   public isAnimating(): boolean {
     return this.animating;
+  }
+  
+  /**
+   * Get move history (protected method for subclasses)
+   */
+  protected getMoveHistory(): Array<{ 
+    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice'; 
+    face?: keyof typeof FACES; 
+    clockwise: boolean 
+  }> {
+    return this.moveHistory;
+  }
+  
+  /**
+   * Clear move history (public method so it can be called from outside)
+   */
+  public clearMoveHistory(): void {
+    this.moveHistory = [];
+    this.historyIndex = -1;
+  }
+  
+  /**
+   * Add move to history (protected method for subclasses)
+   */
+  protected addMoveToHistory(move: { 
+    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice'; 
+    face?: keyof typeof FACES; 
+    clockwise: boolean 
+  }): void {
+    this.moveHistory = this.moveHistory.slice(0, this.historyIndex + 1);
+    this.moveHistory.push(move);
+    this.historyIndex++;
   }
 
   /**
@@ -929,6 +1012,9 @@ export class RubiksCube {
     this.cubelets.forEach(cubelet => {
       this.cubeGroup.remove(cubelet.mesh);
     });
+    
+    // Clear move history
+    this.clearMoveHistory();
     
     // Reset cube state
     this.rotationLogic.reset();

@@ -385,7 +385,7 @@ export class RubiksCube2x2 extends RubiksCube {
    */
   public reset(): void {
     // Stop any ongoing animation first
-    (this as any).stopAnimation();
+    this.stopAnimation();
     
     // Ensure CUBE_CONFIG size is set to 2 for 2x2x2 cube
     CUBE_CONFIG.size = 2;
@@ -406,6 +406,9 @@ export class RubiksCube2x2 extends RubiksCube {
         }
       }
     }
+    
+    // Clear move history
+    this.clearMoveHistory();
     
     // Reset cube state
     (this as any).rotationLogic.reset();
