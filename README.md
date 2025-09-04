@@ -9,7 +9,7 @@ A modern, interactive 3D Rubik's Cube web application built with TypeScript, Thr
 - **Multiple Cube Types**: Support for 2x2, 3x3, 4x4, and 5x5 Rubik's Cubes
 - **Fully Interactive 3D Cube**: Rotate faces, layers, and the entire cube in 3D space
 - **Multiple Control Methods**: Mouse drag, keyboard shortcuts, and touch support
-- **Advanced Notation Support**: 
+- **Advanced Notation Support**:
   - Standard face rotations (F, B, R, L, U, D)
   - Wide moves (Fw/f, Rw/r, etc.) with variable layer counts for 5x5 cube
   - Inner slice rotations (2F, 3R, etc.) for 4x4 and 5x5 cubes
@@ -150,9 +150,9 @@ Default key mappings (customizable in settings):
 - **X/Y/Z**: Rotate entire cube along X/Y/Z axis
 
 #### Advanced Notation (for 4x4 and 5x5 cubes):
+
 - **2F, 3F, etc.**: Rotate inner slices (2nd layer, 3rd layer)
 - **Fw/f, Rw/r, etc.**: Rotate wide slices (double layer turns)
-- **3Uw/3u**: Three-layer wide moves for 5x5 cube
 - **Sequence Input**: Enter standard notation sequences in the input box
 
 Alternative key mapping presets are available in the settings (QWERTY optimized and left-handed).
