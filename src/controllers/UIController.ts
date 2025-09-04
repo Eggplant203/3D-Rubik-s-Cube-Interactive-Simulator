@@ -1243,6 +1243,14 @@ export class UIController {
       this.showSequenceFeedback('Please enter a sequence', 'error');
       return;
     }
+    
+    // Check for invalid number prefixes before x, y, z, M, E, S
+    // Match any digit followed by x, y, z, M, E, S with various possible formats
+    const invalidNumberedMoves = /(^|\s)\d+[xyzMES]('?\d*)?($|\s|')/;
+    if (invalidNumberedMoves.test(sequence)) {
+      this.showSequenceFeedback('Invalid sequence syntax. The moves x, y, z, M, E, S cannot have numbers before them.', 'error');
+      return;
+    }
 
     // For even-layered cubes (2x2, 4x4), validate that no middle layer moves are used
     if (this.isEvenLayeredCube()) {
@@ -1364,13 +1372,20 @@ export class UIController {
     // We'll check if this is an even-layered cube (2x2 or 4x4) in the parsing logic
     for (const token of tokens) {
       if (!token) continue;
+      
+      // Check for invalid numbered moves like 2x, 3M, etc. (digits before x, y, z, M, E, S)
+      // Also detect cases like 2x2, 3M', etc.
+      if (/^\d+[xyzMES]('?\d*)?$/.test(token)) {
+        return null; // Will cause "Invalid sequence syntax" error
+      }
 
       let isDoubleLayer = false;
       let baseToken = token;
 
       // Check for double layer notation (lowercase or uppercase + w)
-      if (/^[rufbld]w?$/i.test(token.replace(/['\d]+$/, ''))) {
-        const cleanToken = token.replace(/['\d]+$/, '');
+      // Also handle pattern with numbers at the beginning like 3Rw, 2Uw
+      if (/^(?:\d+)?[rufbld]w?$/i.test(token.replace(/['\d]+$/, ''))) {
+        const cleanToken = token.replace(/['\d]+$/, '').replace(/^\d+/, ''); // Remove numbers at start and end
         if (cleanToken.length === 1 && cleanToken === cleanToken.toLowerCase()) {
           // Lowercase letter (e.g., r, u)
           isDoubleLayer = true;
@@ -1400,20 +1415,36 @@ export class UIController {
       // Process regular moves
       baseToken = baseToken.toUpperCase();
 
-      // Check for inner slice notation for 4x4x4 cube (2F, 2R, etc.)
-      const innerSliceMatch = baseToken.match(/^2([FBRLUDMESXYZ])('?)(\d*)('?)$/);
-      if (innerSliceMatch && this.is4x4Cube()) {
-        // This is an inner slice rotation for 4x4x4 cube
-        const faceLetter = innerSliceMatch[1];
-        const isPrime = innerSliceMatch[2] === "'" || innerSliceMatch[4] === "'";
-        const repetitionStr = innerSliceMatch[3] || '1';
+      // Check for inner slice notation for 4x4x4 and 5x5x5 cubes (2F, 2R, etc.)
+      // Also accept more general form like 3F for 5x5 cubes
+      const innerSliceMatch = baseToken.match(/^(\d+)([FBRLUDMESXYZ])('?)(\d*)('?)$/);
+      if (innerSliceMatch && (this.is4x4Cube() || this.is5x5Cube())) {
+        // This is an inner slice rotation for 4x4x4 or 5x5x5 cube
+        const layerIdx = parseInt(innerSliceMatch[1]);
+        const faceLetter = innerSliceMatch[2];
+        
+        // Reject numbers before M, E, S, X, Y, Z
+        if (['M', 'E', 'S', 'X', 'Y', 'Z'].includes(faceLetter)) {
+          return null; // Invalid format, will cause "Invalid sequence syntax" error
+        }
+        
+        const isPrime = innerSliceMatch[3] === "'" || innerSliceMatch[5] === "'";
+        const repetitionStr = innerSliceMatch[4] || '1';
         const repetitionNum = parseInt(repetitionStr);
+        
+        // Validate layer index for cube size
+        const maxLayer = this.is5x5Cube() ? 4 : (this.is4x4Cube() ? 3 : 1);
+        if (layerIdx > maxLayer || layerIdx < 1) {
+          // Layer index out of bounds
+          return null;
+        }
         
         // Create inner slice move
         const moveObj: any = {
           type: 'innerSlice',
           face: this.convertFaceLetter(faceLetter),
-          clockwise: !isPrime
+          clockwise: !isPrime,
+          layerIndex: layerIdx - 1 // Convert to 0-based index
         };
         
         if (repetitionNum > 1) {
@@ -1511,12 +1542,19 @@ export class UIController {
   /**
    * Create a double layer move object
    */
-  private createDoubleLayerMove(token: string): {type: string, face?: string, clockwise: boolean, repetition?: number, invalid2x2?: boolean} | null {
+  private createDoubleLayerMove(token: string): {type: string, face?: string, clockwise: boolean, repetition?: number, invalid2x2?: boolean, layerCount?: number} | null {
     // Extract base notation, prime, and repetition
     let baseNotation = token.replace(/['\d]+$/, '');
     const isPrime = token.includes("'");
     const numberMatch = token.match(/(\d+)'?$/);
     const repetition = numberMatch ? parseInt(numberMatch[1]) : 1;
+    
+    // Use default layerCount based on cube type
+    let layerCount = 2; // Default for most cubes
+    // For 5x5x5, use 3 layers by default for Uw/u notation
+    if (this.is5x5Cube()) {
+      layerCount = 3;
+    }
 
     // Normalize base notation
     let face = '';
@@ -1534,7 +1572,8 @@ export class UIController {
       type: 'double',
       face: face,
       clockwise: !isPrime,
-      repetition: repetition
+      repetition: repetition,
+      layerCount: layerCount
     };
   }
 
@@ -1542,26 +1581,42 @@ export class UIController {
    * Execute a single move
    */
   private async executeMove(move: {type: string, face?: string, clockwise: boolean, repetition?: number}): Promise<void> {
-    if (move.type === 'innerSlice' && move.face && this.is4x4Cube()) {
-      // Handle inner slice rotation for 4x4x4 cube
+    if (move.type === 'innerSlice' && move.face && (this.is4x4Cube() || this.is5x5Cube())) {
+      // Handle inner slice rotation for 4x4x4 and 5x5x5 cube
       const repetition = move.repetition || 1;
       const cube = this.getCurrentCube() as any;
+      const layerIndex = (move as any).layerIndex !== undefined ? (move as any).layerIndex : 1; // Default to second layer (index 1)
       
-      if (!cube.rotateInnerSlice) {
+      if (this.is5x5Cube() && cube.rotateInnerSliceAtLayer) {
+        // For 5x5 cube, use the specific layer rotation method
+        // Convert face notation if needed (U -> TOP, etc.)
+        const face = move.face;
+        
+        // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+        let adjustedClockwise = move.clockwise;
+        if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+          adjustedClockwise = !move.clockwise;
+        }
+        
+        for (let i = 0; i < repetition; i++) {
+          await cube.rotateInnerSliceAtLayer(face, adjustedClockwise, layerIndex);
+        }
+      } else if (cube.rotateInnerSlice) {
+        // For 4x4 or fallback for 5x5
+        // Convert face notation if needed (U -> TOP, etc.)
+        const face = move.face;
+        
+        // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+        let adjustedClockwise = move.clockwise;
+        if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+          adjustedClockwise = !move.clockwise;
+        }
+        
+        for (let i = 0; i < repetition; i++) {
+          await cube.rotateInnerSlice(face, adjustedClockwise);
+        }
+      } else {
         throw new Error('Inner slice rotation not supported by current cube');
-      }
-      
-      // Convert face notation if needed (U -> TOP, etc.)
-      const face = move.face;
-      
-      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
-      let adjustedClockwise = move.clockwise;
-      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
-        adjustedClockwise = !move.clockwise;
-      }
-      
-      for (let i = 0; i < repetition; i++) {
-        await cube.rotateInnerSlice(face, adjustedClockwise);
       }
       
       return;
@@ -1575,7 +1630,7 @@ export class UIController {
       const currentCube = this.getCurrentCube();
       const cubeType = (currentCube as any).getCubeType?.();
 
-      if (cubeType === '4x4x4') {
+      if (cubeType === '4x4x4' || cubeType === '5x5x5') {
         // For 4x4x4 cube, we handle wide moves by rotating both the outer face and inner slice
         // Temporarily disable onMove to prevent double counting
         const originalOnMove = currentCube.onMove;
@@ -1608,13 +1663,27 @@ export class UIController {
           innerClockwise = !move.clockwise;
         }
         
+
+        
         for (let i = 0; i < repetition; i++) {
           // Rotate the outer face with adjusted direction
           await currentCube.rotateFace(face, outerClockwise);
           
-          // Rotate inner slice with matching adjusted direction
-          if ((currentCube as any).rotateInnerSlice) {
-            await (currentCube as any).rotateInnerSlice(face, innerClockwise);
+          // Rotate inner slices with matching adjusted direction
+          if (cubeType === '5x5x5') {
+            // For 5x5 cube, always use 2 inner layers (making it total 3 layers with outer face)
+            const maxLayers = 3; // Fixed at 3 for 5x5x5
+            for (let layer = 1; layer < maxLayers; layer++) {
+              if ((currentCube as any).rotateInnerSliceAtLayer) {
+                // We rotate the inner slice at each layer
+                await (currentCube as any).rotateInnerSliceAtLayer(face, innerClockwise, layer);
+              }
+            }
+          } else {
+            // Default behavior for 4x4 or other cubes (just one inner slice)
+            if ((currentCube as any).rotateInnerSlice) {
+              await (currentCube as any).rotateInnerSlice(face, innerClockwise);
+            }
           }
         }
 
@@ -2308,15 +2377,15 @@ export class UIController {
   
   /**
    * Update Inner Slice Controls visibility based on cube type
-   * Only show for 4x4x4 cube
+   * Show for 4x4x4 and 5x5x5 cubes
    */
   private updateInnerSliceControls(): void {
     // Get the inner slice controls div
     const innerSliceControls = document.getElementById('innerSliceControls');
     
     if (innerSliceControls) {
-      // Only show inner slice controls for 4x4x4 cube
-      if (this.is4x4Cube()) {
+      // Show inner slice controls for 4x4x4 and 5x5x5 cubes
+      if (this.is4x4Cube() || this.is5x5Cube()) {
         innerSliceControls.style.display = 'block';
       } else {
         innerSliceControls.style.display = 'none';
@@ -2454,12 +2523,20 @@ export class UIController {
   }
   
   /**
-   * Handle inner slice rotation for 4x4x4 cube
+   * Check if current cube is a 5x5x5 cube
+   */
+  private is5x5Cube(): boolean {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '5x5x5';
+  }
+  
+  /**
+   * Handle inner slice rotation for 4x4x4 and 5x5x5 cubes
    */
   private async handleInnerSliceRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
     try {
-      if (!this.is4x4Cube()) {
-        this.notificationSystem.error('Inner slice rotation is only available for 4x4x4 cube');
+      if (!this.is4x4Cube() && !this.is5x5Cube()) {
+        this.notificationSystem.error('Inner slice rotation is only available for 4x4x4 and 5x5x5 cubes');
         return;
       }
       

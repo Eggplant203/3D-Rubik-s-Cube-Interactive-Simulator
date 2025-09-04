@@ -112,8 +112,16 @@ export class CubeConfigurationFactory {
     // Adjust animation duration for larger cubes
     config.animation.transitionDuration = this.calculateAnimationDuration(size);
     
-    // Standardize the cube configuration
-    standardizeCubeConfig(size === 2 ? '2x2x2' : '3x3x3');
+    // Standardize the cube configuration based on size
+    if (size === 2) {
+      standardizeCubeConfig('2x2x2');
+    } else if (size === 4) {
+      standardizeCubeConfig('4x4x4');
+    } else if (size === 5) {
+      standardizeCubeConfig('5x5x5');
+    } else {
+      standardizeCubeConfig('3x3x3');
+    }
     
     return config;
   }

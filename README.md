@@ -1,27 +1,36 @@
 # 3D Rubik's Cube Interactive Simulator
 
-A modern, interactive 3D Rubik's Cube web application built with TypeScript, Three.js, and Vite. This application allows users to interact with multiple virtual Rubik's Cube types (2x2, 3x3, and 4x4), practice solving techniques, and track statistics.
+A modern, interactive 3D Rubik's Cube web application built with TypeScript, Three.js, and Vite. This application allows users to interact with multiple virtual Rubik's Cube types (2x2, 3x3, 4x4, and 5x5), practice solving techniques, and track statistics.
 
 ![3D Rubik's Cube](./picture/screenshot.png)
 
 ## Features
 
-- **Multiple Cube Types**: Support for 2x2, 3x3, and 4x4 Rubik's Cubes
+- **Multiple Cube Types**: Support for 2x2, 3x3, 4x4, and 5x5 Rubik's Cubes
 - **Fully Interactive 3D Cube**: Rotate faces, layers, and the entire cube in 3D space
 - **Multiple Control Methods**: Mouse drag, keyboard shortcuts, and touch support
+- **Advanced Notation Support**: 
+  - Standard face rotations (F, B, R, L, U, D)
+  - Wide moves (Fw/f, Rw/r, etc.) with variable layer counts for 5x5 cube
+  - Inner slice rotations (2F, 3R, etc.) for 4x4 and 5x5 cubes
+  - Middle layer rotations (M, E, S) for odd-layered cubes
 - **Practice & Timer Modes**:
   - Move counter
   - Timer mode
   - Statistics tracking
 - **Practice Tools**:
-  - Scramble function
+  - Scramble function with cube-size optimized algorithms
   - Undo/Redo moves
   - Reset cube
   - Reversed scramble option
+  - Save and load cube state via JSON files
+  - Save current state to local storage
 - **User Experience**:
   - Light/Dark theme toggle
   - Customizable color themes
   - Responsive design for mobile and desktop
+  - Sequence input for executing complex move sequences
+  - Cross-device state preservation
 - **Visual Aids**:
   - Camera controls
   - Hide/show UI elements
@@ -140,16 +149,23 @@ Default key mappings (customizable in settings):
 - **S**: Rotate standing layer
 - **X/Y/Z**: Rotate entire cube along X/Y/Z axis
 
+#### Advanced Notation (for 4x4 and 5x5 cubes):
+- **2F, 3F, etc.**: Rotate inner slices (2nd layer, 3rd layer)
+- **Fw/f, Rw/r, etc.**: Rotate wide slices (double layer turns)
+- **3Uw/3u**: Three-layer wide moves for 5x5 cube
+- **Sequence Input**: Enter standard notation sequences in the input box
+
 Alternative key mapping presets are available in the settings (QWERTY optimized and left-handed).
 
 ## Customization
 
 The application includes extensive customization options:
 
-- **Cube Types**: Switch between 2x2, 3x3, and 4x4 cubes
-- **Color Themes**: Choose from various color schemes
-- **Key Mappings**: Select from different keyboard mapping presets
+- **Cube Types**: Switch between 2x2, 3x3, 4x4, and 5x5 cubes
+- **Color Themes**: Choose from various color schemes or create custom themes
+- **Key Mappings**: Select from different keyboard mapping presets or customize your own
 - **Interface Options**: Toggle UI elements visibility and theme
+- **Settings Persistence**: Your settings are saved to local storage
 
 ## Performance Optimization
 
@@ -172,7 +188,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-© 2025 - Developed by Eggplant203 🍆
+© 2023-2025 - Developed by Eggplant203 🍆
 
 ---
 

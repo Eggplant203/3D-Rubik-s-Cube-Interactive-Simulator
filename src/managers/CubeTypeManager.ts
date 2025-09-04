@@ -3,6 +3,7 @@ import { CUBE_CONFIG, standardizeCubeConfig } from '../config/constants';
 import { RubiksCube } from '../core/RubiksCube';
 import { RubiksCube2x2 } from '../core/RubiksCube2x2';
 import { RubiksCube4x4 } from '../core/RubiksCube4x4';
+import { RubiksCube5x5 } from '../core/RubiksCube5x5';
 import { SceneManager } from '../core/SceneManager';
 import { SettingsManager } from './SettingsManager';
 import { ColorThemeManager } from './ColorThemeManager';
@@ -140,6 +141,8 @@ export class CubeTypeManager {
         standardizeCubeConfig('2x2x2');
       } else if (size === 4) {
         standardizeCubeConfig('4x4x4');
+      } else if (size === 5) {
+        standardizeCubeConfig('5x5x5');
       } else {
         standardizeCubeConfig('3x3x3');
       }
@@ -149,6 +152,8 @@ export class CubeTypeManager {
         this.currentCube = new RubiksCube2x2(this.sceneManager.getScene());
       } else if (size === 4) {
         this.currentCube = new RubiksCube4x4(this.sceneManager.getScene());
+      } else if (size === 5) {
+        this.currentCube = new RubiksCube5x5(this.sceneManager.getScene());
       } else {
         this.currentCube = new RubiksCube(this.sceneManager.getScene());
       }

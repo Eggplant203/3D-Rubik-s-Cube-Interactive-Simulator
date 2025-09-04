@@ -241,11 +241,11 @@ export class KeyboardController implements InputHandler {
     if (normalizedKey === this.keyMappings.front) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('FRONT', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
@@ -256,11 +256,11 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.back) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('BACK', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
@@ -271,11 +271,11 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.right) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('RIGHT', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
@@ -286,11 +286,11 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.left) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('LEFT', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
@@ -301,11 +301,11 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.up) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('TOP', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
@@ -316,11 +316,11 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.down) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4') {
-          // For 4x4x4, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+          // For 4x4x4 and 5x5x5, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('BOTTOM', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4
+          // Show notification that 2 + key is only available for 4x4x4 and 5x5x5
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
