@@ -119,6 +119,8 @@ export class CubeConfigurationFactory {
       standardizeCubeConfig('4x4x4');
     } else if (size === 5) {
       standardizeCubeConfig('5x5x5');
+    } else if (size === 6) {
+      standardizeCubeConfig('6x6x6');
     } else {
       standardizeCubeConfig('3x3x3');
     }
@@ -165,6 +167,16 @@ export class CubeConfigurationFactory {
     config.complexityLevel = 7;
     return config;
   }
+  
+  /**
+   * Create configuration for 6x6x6 cube (V-Cube 6)
+   */
+  public static create6x6(): CubeConfiguration {
+    const config = this.createConfiguration(6);
+    config.scrambleSteps = 60;
+    config.complexityLevel = 9;
+    return config;
+  }
 
   /**
    * Create configuration for custom rectangular cube
@@ -189,7 +201,7 @@ export class CubeConfigurationFactory {
    * Get available standard cube sizes
    */
   public static getStandardSizes(): number[] {
-    return [2, 3, 4, 5, 6, 7];
+    return [2, 3, 4, 5, 6];  // Only include implemented sizes
   }
 
   /**
@@ -271,6 +283,8 @@ export class CubeConfigurationFactory {
         return 35; // Default for 4x4x4
       case 5:
         return 50; // Default for 5x5x5
+      case 6:
+        return 60; // Default for 6x6x6
       default:
         // For other sizes, use formula: base steps + size factor
         const baseSteps = 10;

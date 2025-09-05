@@ -150,7 +150,7 @@ export class UIController {
       rotateBottom: document.getElementById('rotateBottom') as HTMLButtonElement,
       rotateBottomPrime: document.getElementById('rotateBottomPrime') as HTMLButtonElement,
       
-      // Inner slice rotation buttons (4x4x4 only)
+      // Inner slice rotation buttons (2nd layer - for 4x4x4, 5x5x5, 6x6x6)
       rotateInnerFront: document.getElementById('rotateInnerFront') as HTMLButtonElement,
       rotateInnerFrontPrime: document.getElementById('rotateInnerFrontPrime') as HTMLButtonElement,
       rotateInnerBack: document.getElementById('rotateInnerBack') as HTMLButtonElement,
@@ -163,6 +163,20 @@ export class UIController {
       rotateInnerTopPrime: document.getElementById('rotateInnerTopPrime') as HTMLButtonElement,
       rotateInnerBottom: document.getElementById('rotateInnerBottom') as HTMLButtonElement,
       rotateInnerBottomPrime: document.getElementById('rotateInnerBottomPrime') as HTMLButtonElement,
+      
+      // Third layer rotation buttons (3rd layer - for 6x6x6 only)
+      rotateThirdFront: document.getElementById('rotateThirdFront') as HTMLButtonElement,
+      rotateThirdFrontPrime: document.getElementById('rotateThirdFrontPrime') as HTMLButtonElement,
+      rotateThirdBack: document.getElementById('rotateThirdBack') as HTMLButtonElement,
+      rotateThirdBackPrime: document.getElementById('rotateThirdBackPrime') as HTMLButtonElement,
+      rotateThirdRight: document.getElementById('rotateThirdRight') as HTMLButtonElement,
+      rotateThirdRightPrime: document.getElementById('rotateThirdRightPrime') as HTMLButtonElement,
+      rotateThirdLeft: document.getElementById('rotateThirdLeft') as HTMLButtonElement,
+      rotateThirdLeftPrime: document.getElementById('rotateThirdLeftPrime') as HTMLButtonElement,
+      rotateThirdTop: document.getElementById('rotateThirdTop') as HTMLButtonElement,
+      rotateThirdTopPrime: document.getElementById('rotateThirdTopPrime') as HTMLButtonElement,
+      rotateThirdBottom: document.getElementById('rotateThirdBottom') as HTMLButtonElement,
+      rotateThirdBottomPrime: document.getElementById('rotateThirdBottomPrime') as HTMLButtonElement,
       rotateMiddle: document.getElementById('rotateMiddle') as HTMLButtonElement,
       rotateMiddlePrime: document.getElementById('rotateMiddlePrime') as HTMLButtonElement,
       rotateEquator: document.getElementById('rotateEquator') as HTMLButtonElement,
@@ -606,6 +620,55 @@ export class UIController {
     
     this.elements.rotation.rotateInnerBottomPrime?.addEventListener('click', async () => {
       await this.handleInnerSliceRotation('BOTTOM', false);
+    });
+    
+    // Third layer rotation buttons (6x6x6 only)
+    this.elements.rotation.rotateThirdFront?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('FRONT', true);
+    });
+    
+    this.elements.rotation.rotateThirdFrontPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('FRONT', false);
+    });
+    
+    this.elements.rotation.rotateThirdBack?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('BACK', true);
+    });
+    
+    this.elements.rotation.rotateThirdBackPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('BACK', false);
+    });
+    
+    this.elements.rotation.rotateThirdRight?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('RIGHT', true);
+    });
+    
+    this.elements.rotation.rotateThirdRightPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('RIGHT', false);
+    });
+    
+    this.elements.rotation.rotateThirdLeft?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('LEFT', true);
+    });
+    
+    this.elements.rotation.rotateThirdLeftPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('LEFT', false);
+    });
+    
+    this.elements.rotation.rotateThirdTop?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('TOP', true);
+    });
+    
+    this.elements.rotation.rotateThirdTopPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('TOP', false);
+    });
+    
+    this.elements.rotation.rotateThirdBottom?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('BOTTOM', true);
+    });
+    
+    this.elements.rotation.rotateThirdBottomPrime?.addEventListener('click', async () => {
+      await this.handleThirdLayerRotation('BOTTOM', false);
     });
     
     this.elements.rotation.rotateMiddle?.addEventListener('click', async () => {
@@ -1415,10 +1478,10 @@ export class UIController {
       // Process regular moves
       baseToken = baseToken.toUpperCase();
 
-      // Check for inner slice notation for 4x4x4 and 5x5x5 cubes (2F, 2R, etc.)
-      // Also accept more general form like 3F for 5x5 cubes
+      // Check for inner slice notation for 4x4x4, 5x5x5, and 6x6x6 cubes (2F, 2R, 3F, etc.)
+      // Also accept more general form like 3F for 5x5/6x6 cubes
       const innerSliceMatch = baseToken.match(/^(\d+)([FBRLUDMESXYZ])('?)(\d*)('?)$/);
-      if (innerSliceMatch && (this.is4x4Cube() || this.is5x5Cube())) {
+      if (innerSliceMatch && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube())) {
         // This is an inner slice rotation for 4x4x4 or 5x5x5 cube
         const layerIdx = parseInt(innerSliceMatch[1]);
         const faceLetter = innerSliceMatch[2];
@@ -1433,15 +1496,21 @@ export class UIController {
         const repetitionNum = parseInt(repetitionStr);
         
         // Validate layer index for cube size
-        const maxLayer = this.is5x5Cube() ? 4 : (this.is4x4Cube() ? 3 : 1);
+        const maxLayer = this.is6x6Cube() ? 5 : (this.is5x5Cube() ? 4 : (this.is4x4Cube() ? 3 : 1));
         if (layerIdx > maxLayer || layerIdx < 1) {
           // Layer index out of bounds
           return null;
         }
         
+        // Determine move type based on layer index
+        let moveType = 'innerSlice';
+        if (this.is6x6Cube() && layerIdx === 3) {
+          moveType = 'thirdLayerSlice';
+        }
+        
         // Create inner slice move
         const moveObj: any = {
-          type: 'innerSlice',
+          type: moveType,
           face: this.convertFaceLetter(faceLetter),
           clockwise: !isPrime,
           layerIndex: layerIdx - 1 // Convert to 0-based index
@@ -1551,9 +1620,27 @@ export class UIController {
     
     // Use default layerCount based on cube type
     let layerCount = 2; // Default for most cubes
-    // For 5x5x5, use 3 layers by default for Uw/u notation
-    if (this.is5x5Cube()) {
-      layerCount = 3;
+    
+    // For 5x5x5 and 6x6x6, use 3 layers by default for Uw/u notation
+    // Check for number prefix like 2Uw or 3Uw
+    const numMatch = baseNotation.match(/^(\d+)([rufbld]w?)$/i);
+    if (numMatch) {
+      // If there's a number prefix like 2Uw, use that number as layer count
+      layerCount = parseInt(numMatch[1]);
+      // Make sure layerCount is valid for the cube size
+      if (this.is5x5Cube()) {
+        layerCount = Math.min(layerCount, 4); // Max 4 layers for 5x5
+      } else if (this.is6x6Cube()) {
+        layerCount = Math.min(layerCount, 5); // Max 5 layers for 6x6
+      } else if (this.is4x4Cube()) {
+        layerCount = Math.min(layerCount, 3); // Max 3 layers for 4x4
+      } else {
+        layerCount = Math.min(layerCount, 2); // Max 2 layers for 3x3
+      }
+    }
+    // If there's no number prefix, use default counts for 5x5x5 and 6x6x6
+    else if (this.is5x5Cube() || this.is6x6Cube()) {
+      layerCount = 3; // Default to 3 layers for 5x5x5 and 6x6x6
     }
 
     // Normalize base notation
@@ -1581,13 +1668,34 @@ export class UIController {
    * Execute a single move
    */
   private async executeMove(move: {type: string, face?: string, clockwise: boolean, repetition?: number}): Promise<void> {
-    if (move.type === 'innerSlice' && move.face && (this.is4x4Cube() || this.is5x5Cube())) {
-      // Handle inner slice rotation for 4x4x4 and 5x5x5 cube
+    if (move.type === 'thirdLayerSlice' && move.face && this.is6x6Cube()) {
+      // Handle third layer slice rotation for 6x6x6 cube
+      const repetition = move.repetition || 1;
+      const cube = this.getCurrentCube() as any;
+      
+      // Convert face notation if needed (U -> TOP, etc.)
+      const face = move.face;
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = move.clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !move.clockwise;
+      }
+      
+      for (let i = 0; i < repetition; i++) {
+        await cube.rotateThirdLayerSlice(face, adjustedClockwise);
+      }
+      
+      return;
+    }
+    
+    if (move.type === 'innerSlice' && move.face && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube())) {
+      // Handle inner slice rotation for 4x4x4, 5x5x5, and 6x6x6 cube
       const repetition = move.repetition || 1;
       const cube = this.getCurrentCube() as any;
       const layerIndex = (move as any).layerIndex !== undefined ? (move as any).layerIndex : 1; // Default to second layer (index 1)
       
-      if (this.is5x5Cube() && cube.rotateInnerSliceAtLayer) {
+      if ((this.is5x5Cube() || this.is6x6Cube()) && cube.rotateInnerSliceAtLayer) {
         // For 5x5 cube, use the specific layer rotation method
         // Convert face notation if needed (U -> TOP, etc.)
         const face = move.face;
@@ -1630,7 +1738,7 @@ export class UIController {
       const currentCube = this.getCurrentCube();
       const cubeType = (currentCube as any).getCubeType?.();
 
-      if (cubeType === '4x4x4' || cubeType === '5x5x5') {
+      if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
         // For 4x4x4 cube, we handle wide moves by rotating both the outer face and inner slice
         // Temporarily disable onMove to prevent double counting
         const originalOnMove = currentCube.onMove;
@@ -1670,13 +1778,20 @@ export class UIController {
           await currentCube.rotateFace(face, outerClockwise);
           
           // Rotate inner slices with matching adjusted direction
-          if (cubeType === '5x5x5') {
-            // For 5x5 cube, always use 2 inner layers (making it total 3 layers with outer face)
-            const maxLayers = 3; // Fixed at 3 for 5x5x5
+          if (cubeType === '5x5x5' || cubeType === '6x6x6') {
+            // For 5x5 and 6x6 cubes, we need to support variable layer counts
+            // Get the layer count from the move object (set by createDoubleLayerMove)
+            const maxLayers = (move as any).layerCount || 3; // Default to 3 if not specified
             for (let layer = 1; layer < maxLayers; layer++) {
               if ((currentCube as any).rotateInnerSliceAtLayer) {
                 // We rotate the inner slice at each layer
                 await (currentCube as any).rotateInnerSliceAtLayer(face, innerClockwise, layer);
+              } else if (layer === 1 && (currentCube as any).rotateInnerSlice) {
+                // Fallback to rotateInnerSlice for layer 1
+                await (currentCube as any).rotateInnerSlice(face, innerClockwise);
+              } else if (layer === 2 && (currentCube as any).rotateThirdLayerSlice) {
+                // For 6x6, use rotateThirdLayerSlice for layer 2
+                await (currentCube as any).rotateThirdLayerSlice(face, innerClockwise);
               }
             }
           } else {
@@ -2382,13 +2497,23 @@ export class UIController {
   private updateInnerSliceControls(): void {
     // Get the inner slice controls div
     const innerSliceControls = document.getElementById('innerSliceControls');
+    const thirdLayerControls = document.getElementById('thirdLayerControls');
     
     if (innerSliceControls) {
-      // Show inner slice controls for 4x4x4 and 5x5x5 cubes
-      if (this.is4x4Cube() || this.is5x5Cube()) {
+      // Show inner slice controls for 4x4x4, 5x5x5, and 6x6x6 cubes
+      if (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube()) {
         innerSliceControls.style.display = 'block';
       } else {
         innerSliceControls.style.display = 'none';
+      }
+    }
+    
+    // Third layer controls are only for 6x6x6
+    if (thirdLayerControls) {
+      if (this.is6x6Cube()) {
+        thirdLayerControls.style.display = 'block';
+      } else {
+        thirdLayerControls.style.display = 'none';
       }
     }
   }
@@ -2531,6 +2656,14 @@ export class UIController {
   }
   
   /**
+   * Check if current cube is a 6x6x6 cube
+   */
+  private is6x6Cube(): boolean {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '6x6x6';
+  }
+  
+  /**
    * Handle inner slice rotation for 4x4x4 and 5x5x5 cubes
    */
   private async handleInnerSliceRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
@@ -2564,6 +2697,40 @@ export class UIController {
       this.playSound('move');
     } catch (error) {
       console.error("Error rotating inner slice:", error);
+    }
+  }
+  
+  private async handleThirdLayerRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
+    try {
+      if (!this.is6x6Cube()) {
+        this.notificationSystem.error('Third layer slice rotation is only available for 6x6x6 cubes');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube() as any;
+      
+      if (!currentCube.rotateThirdLayerSlice) {
+        this.notificationSystem.error('Third layer slice rotation not supported by current cube');
+        return;
+      }
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !clockwise;
+      }
+      
+      // Rotate the third layer slice with adjusted direction
+      await currentCube.rotateThirdLayerSlice(face, adjustedClockwise);
+      
+      // Always increment moves count
+      this.moveCount++;
+      this.updateMoveCounter();
+      
+      // Play sound
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating third layer slice:", error);
     }
   }
   
