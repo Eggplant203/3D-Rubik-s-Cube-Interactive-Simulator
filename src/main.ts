@@ -9,9 +9,6 @@ import { UIController } from './controllers/UIController';
 import { SettingsManager } from './managers/SettingsManager';
 import { CubeTypeManager } from './managers/CubeTypeManager';
 
-/**
- * Main application class
- */
 class RubikApp {
   private sceneManager: SceneManager | null = null;
   private rubiksCube: RubiksCube | null = null;
@@ -26,27 +23,19 @@ class RubikApp {
     }
   }
 
-  /**
-   * Initialize the application
-   */
   public async init(): Promise<void> {
     try {
       this.showLoading();
-      
-      // Initialize scene manager
+
       this.sceneManager = new SceneManager(this.container);
-      
-      // Get settings manager to check the initial cube size
+
       const settingsManager = SettingsManager.getInstance();
       const cubeSize = settingsManager.get('cubeSize');
-      
-      // Ensure cubeSize is saved to localStorage
+
       settingsManager.set('cubeSize', cubeSize);
-      
-      // Create appropriate cube based on settings and ensure settings are saved
+
       if (cubeSize === 2) {
         this.rubiksCube = new RubiksCube2x2(this.sceneManager.getScene());
-        // Explicitly set cube size to 2 to ensure consistency
         settingsManager.set('cubeSize', 2);
       } else {
         this.rubiksCube = new RubiksCube(this.sceneManager.getScene());
@@ -58,31 +47,21 @@ class RubikApp {
       if (this.rubiksCube && this.sceneManager) {
         this.inputManager = new InputManager(this.rubiksCube);
         
-        // Initialize UI controller - this will set up the cube type manager properly
         this.uiController = new UIController(this.rubiksCube, this.sceneManager, this.inputManager);
       } else {
         throw new Error('Failed to initialize cube or scene');
       }
-      
-      // Set UIController reference in InputManager
+
       this.inputManager.setUIController(this.uiController);
-      
-      // Enable input handling
       this.inputManager.enable();
-      
-      // Start render loop
       this.sceneManager.startRenderLoop();
-      
       this.hideLoading();
-      
+
     } catch (error) {
       this.showError('Failed to load the application. Please refresh the page.');
     }
   }
 
-  /**
-   * Show loading screen
-   */
   private showLoading(): void {
     const loading = document.createElement('div');
     loading.className = 'loading';
@@ -94,9 +73,6 @@ class RubikApp {
     this.container.appendChild(loading);
   }
 
-  /**
-   * Hide loading screen
-   */
   private hideLoading(): void {
     const loading = document.getElementById('loading');
     if (loading) {
@@ -104,9 +80,6 @@ class RubikApp {
     }
   }
 
-  /**
-   * Show error message
-   */
   private showError(message: string): void {
     this.hideLoading();
     const error = document.createElement('div');
@@ -130,9 +103,6 @@ class RubikApp {
     this.container.appendChild(error);
   }
 
-  /**
-   * Cleanup resources
-   */
   public dispose(): void {
     this.inputManager?.dispose();
     this.uiController?.dispose();
@@ -140,19 +110,16 @@ class RubikApp {
   }
 }
 
-// Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-  // Make CubeTypeManager globally available for cross-component communication
   (window as any).CubeTypeManager = CubeTypeManager;
-  
+
   const app = new RubikApp();
-  
+
   try {
     await app.init();
   } catch (error) {
   }
-  
-  // Cleanup on page unload
+
   window.addEventListener('beforeunload', () => {
     app.dispose();
   });

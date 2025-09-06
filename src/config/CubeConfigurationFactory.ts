@@ -177,6 +177,16 @@ export class CubeConfigurationFactory {
     config.complexityLevel = 9;
     return config;
   }
+  
+  /**
+   * Create configuration for 10x10x10 cube
+   */
+  public static create10x10(): CubeConfiguration {
+    const config = this.createConfiguration(10);
+    config.scrambleSteps = 80;
+    config.complexityLevel = 10;
+    return config;
+  }
 
   /**
    * Create configuration for custom rectangular cube
@@ -201,7 +211,7 @@ export class CubeConfigurationFactory {
    * Get available standard cube sizes
    */
   public static getStandardSizes(): number[] {
-    return [2, 3, 4, 5, 6];  // Only include implemented sizes
+    return [2, 3, 4, 5, 6, 10];  // Include all implemented sizes including 10x10x10
   }
 
   /**
@@ -213,8 +223,9 @@ export class CubeConfigurationFactory {
       3: "Rubik's Cube (3x3x3)",
       4: "Rubik's Revenge (4x4x4)",  
       5: "Professor's Cube (5x5x5)",
-      6: "V-Cube 6 (6x6x6)",
-      7: "V-Cube 7 (7x7x7)"
+      6: "Master's Cube (6x6x6)",
+      7: "Grandmaster's Cube (7x7x7)",
+      10: "Overlord's Cube (10x10x10)"
     };
     
     return names[size] || `${size}x${size}x${size} Cube`;
@@ -235,7 +246,8 @@ export class CubeConfigurationFactory {
       4: 1.34,  // 1.27 times smaller than 3x3x3
       5: 1.2,   // Progressively smaller for larger cubes
       6: 1.0,
-      7: 0.9
+      7: 0.9,
+      10: 0.55  // Significantly smaller for 10x10x10
     };
     
     return sizeMap[size] || Math.max(0.8, 1.7 - (size - 4) * 0.15);
@@ -253,7 +265,8 @@ export class CubeConfigurationFactory {
       4: 0.01,  // Same as in constants.ts
       5: 0.01,  // Consistently small for larger cubes
       6: 0.01,
-      7: 0.01
+      7: 0.01,
+      10: 0.01 // Even smaller spacing for 10x10x10
     };
     
     return spacingMap[size] || Math.max(0.01, 0.02 - (size - 3) * 0.002);
@@ -285,6 +298,8 @@ export class CubeConfigurationFactory {
         return 50; // Default for 5x5x5
       case 6:
         return 60; // Default for 6x6x6
+      case 10:
+        return 100; // Default for 10x10x10
       default:
         // For other sizes, use formula: base steps + size factor
         const baseSteps = 10;
@@ -310,6 +325,7 @@ export class CubeConfigurationFactory {
     if (size === 4) return 5;
     if (size === 5) return 7;
     if (size === 6) return 8;
+    if (size === 10) return 10;
     if (size >= 7) return 9;
     return Math.min(10, size);
   }

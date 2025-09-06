@@ -4,29 +4,20 @@ import { CUBE_CONFIG, FACES, ROTATION_AXES, standardizeCubeConfig } from '../con
 import { RotationLogic } from './RotationLogic';
 import { DirectionHandler, StandardDirectionHandler } from './DirectionHandler';
 
-/**
- * Face type representing a 3x3 grid of colors
- */
 type Face = string[][];
 
-/**
- * Cube state interface for 2D net rendering
- */
 interface CubeState {
-  U: Face; // Up
-  D: Face; // Down
-  L: Face; // Left
-  R: Face; // Right
-  F: Face; // Front
-  B: Face; // Back
+  U: Face;
+  D: Face;
+  L: Face;
+  R: Face;
+  F: Face;
+  B: Face;
 }
 
-/**
- * Main Rubik's Cube class that manages all cubelets and operations
- */
 export class RubiksCube {
   private cubelets: Cubelet[] = [];
-  private originalPositions: THREE.Vector3[] = []; // Store original positions for color updates
+  private originalPositions: THREE.Vector3[] = [];
   private cubeGroup: THREE.Group;
   private scene: THREE.Scene;
   private animating: boolean = false;
@@ -35,17 +26,16 @@ export class RubiksCube {
   private rotationLogic: RotationLogic;
   protected directionHandler: DirectionHandler = new StandardDirectionHandler();
   private isDisposed: boolean = false;
-  
-  // Callbacks
+
   public onMove?: () => void;
   public onSolveComplete?: () => void;
   public soundEnabledCallback?: () => boolean;
-  
-  // Move history for undo/redo
-  private moveHistory: Array<{ 
-    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice'; 
-    face?: keyof typeof FACES; 
-    clockwise: boolean 
+
+  private moveHistory: Array<{
+    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice' | 'innerSliceLayer';
+    face?: keyof typeof FACES;
+    clockwise: boolean;
+    layerIndex?: number;
   }> = [];
   private historyIndex: number = -1;
 
@@ -152,9 +142,10 @@ export class RubiksCube {
    * Get move history (protected method for subclasses)
    */
   protected getMoveHistory(): Array<{ 
-    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice'; 
+    type: 'face' | 'middle' | 'equator' | 'standing' | 'cubeX' | 'cubeY' | 'cubeZ' | 'innerSlice' | 'innerSliceLayer'; 
     face?: keyof typeof FACES; 
-    clockwise: boolean 
+    clockwise: boolean;
+    layerIndex?: number;
   }> {
     return this.moveHistory;
   }
@@ -1130,6 +1121,18 @@ export class RubiksCube {
       case 'cubeZ':
         await this.rotateCubeZ(!lastMove.clockwise, true);
         break;
+      case 'innerSlice':
+        // Handle inner slice rotations for cubes that support it
+        if (lastMove.face && (this as any).rotateInnerSlice) {
+          await (this as any).rotateInnerSlice(lastMove.face, !lastMove.clockwise, true);
+        }
+        break;
+      case 'innerSliceLayer':
+        // Handle inner slice rotations with layer index for cubes that support it
+        if (lastMove.face && lastMove.layerIndex !== undefined && (this as any).rotateInnerSliceAtLayer) {
+          await (this as any).rotateInnerSliceAtLayer(lastMove.face, !lastMove.clockwise, lastMove.layerIndex, true);
+        }
+        break;
     }
     return true;
   }
@@ -1166,6 +1169,18 @@ export class RubiksCube {
         break;
       case 'cubeZ':
         await this.rotateCubeZ(nextMove.clockwise, true);
+        break;
+      case 'innerSlice':
+        // Handle inner slice rotations for cubes that support it
+        if (nextMove.face && (this as any).rotateInnerSlice) {
+          await (this as any).rotateInnerSlice(nextMove.face, nextMove.clockwise, true);
+        }
+        break;
+      case 'innerSliceLayer':
+        // Handle inner slice rotations with layer index for cubes that support it
+        if (nextMove.face && nextMove.layerIndex !== undefined && (this as any).rotateInnerSliceAtLayer) {
+          await (this as any).rotateInnerSliceAtLayer(nextMove.face, nextMove.clockwise, nextMove.layerIndex, true);
+        }
         break;
     }
     return true;
@@ -1371,7 +1386,8 @@ export class RubiksCube {
     const cornerCubelets = this.cubelets.filter(cubelet => {
       let coloredCount = 0;
       for (let i = 0; i < 6; i++) {
-        if (cubelet.colors[i] !== '#333333') {
+        // Consider both solid colors and gradients as colored faces
+        if (cubelet.colors[i] !== '#333333' && cubelet.colors[i] !== '') {
           coloredCount++;
         }
       }
@@ -1384,10 +1400,11 @@ export class RubiksCube {
     const cubelet = cornerCubelets[cornerIndex - 1];    // Get current colors
     const colors = [...cubelet.colors];
 
-    // Find the 3 colored faces (non-black faces) and sort them for consistent rotation order
+    // Find the 3 colored faces (non-black/non-empty faces) and sort them for consistent rotation order
     const coloredFaces: number[] = [];
     for (let i = 0; i < 6; i++) {
-      if (colors[i] !== '#333333') {
+      // Check for both solid colors and gradients
+      if (colors[i] !== '#333333' && colors[i] !== '') {
         coloredFaces.push(i);
       }
     }
@@ -1421,10 +1438,17 @@ export class RubiksCube {
     // Update visual materials
     const mesh = cubelet.mesh.children[0] as THREE.Mesh;
     if (mesh && mesh.material instanceof Array) {
-      for (let i = 0; i < 6; i++) {
-        const material = mesh.material[i] as THREE.MeshPhongMaterial;
-        material.color.setStyle(colors[i] || '#333333');
-        material.needsUpdate = true;
+      // Need to regenerate materials for gradient themes
+      if (colors.some(color => typeof color === 'string' && color.startsWith('linear-gradient'))) {
+        // Create entirely new materials for this cubelet
+        this.updateCubeletMaterialsForCorner(cubelet);
+      } else {
+        // For solid colors, simply update the material colors
+        for (let i = 0; i < 6; i++) {
+          const material = mesh.material[i] as THREE.MeshPhongMaterial;
+          material.color.setStyle(colors[i] || '#333333');
+          material.needsUpdate = true;
+        }
       }
     }
 
@@ -1435,6 +1459,95 @@ export class RubiksCube {
     if (this.onMove) {
       this.onMove();
     }
+  }
+
+  /**
+   * Update cubelet materials specifically for corners that have been rotated
+   * This is needed to properly display gradient themes when corners are rotated
+   */
+  private updateCubeletMaterialsForCorner(cubelet: Cubelet): void {
+    const mesh = cubelet.mesh.children[0] as THREE.Mesh;
+    if (!mesh || !(mesh.material instanceof Array)) return;
+    
+    const materials = [];
+    
+    for (let i = 0; i < 6; i++) {
+      const color = cubelet.colors[i] || '#333333';
+      
+      // Check if color value is a gradient (starts with 'linear-gradient')
+      if (typeof color === 'string' && color.startsWith('linear-gradient')) {
+        // Create a canvas texture for gradient
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Parse gradient
+          const gradientMatch = color.match(/linear-gradient\(([^,]+),\s*([^,]+),\s*([^)]+)\)/);
+          if (gradientMatch) {
+            const direction = gradientMatch[1];
+            const color1 = gradientMatch[2].trim();
+            const color2 = gradientMatch[3].trim();
+            
+            // Create gradient based on direction
+            let gradient;
+            if (direction.includes('45deg')) {
+              gradient = ctx.createLinearGradient(0, 0, 256, 256);
+            } else if (direction.includes('135deg')) {
+              gradient = ctx.createLinearGradient(0, 256, 256, 0);
+            } else if (direction.includes('to right')) {
+              gradient = ctx.createLinearGradient(0, 0, 256, 0);
+            } else {
+              // Default to vertical gradient
+              gradient = ctx.createLinearGradient(0, 0, 0, 256);
+            }
+            
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Create texture
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            
+            // Create material with gradient texture
+            const material = new THREE.MeshPhongMaterial({ 
+              map: texture,
+              color: 0xffffff,
+              transparent: false,
+              opacity: 1.0,
+              shininess: 100,
+              specular: 0x222222
+            });
+            
+            materials.push(material);
+          } else {
+            // Fallback to solid color
+            materials.push(new THREE.MeshPhongMaterial({ color: color }));
+          }
+        } else {
+          // Fallback if canvas context creation fails
+          materials.push(new THREE.MeshPhongMaterial({ color: '#333333' }));
+        }
+      } else {
+        // Handle regular solid colors
+        materials.push(new THREE.MeshPhongMaterial({ 
+          color: color || '#333333',
+          transparent: false,
+          opacity: 1.0,
+          shininess: 100,
+          specular: 0x222222
+        }));
+      }
+    }
+    
+    // Replace all materials at once
+    mesh.material = materials;
+    mesh.material.forEach(mat => {
+      mat.needsUpdate = true;
+    });
   }
 
   /**

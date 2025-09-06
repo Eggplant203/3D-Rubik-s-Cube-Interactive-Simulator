@@ -8,9 +8,6 @@ import { CubeTypeManager } from '../managers/CubeTypeManager';
 import { CubeConfigurationFactory } from '../config/CubeConfigurationFactory';
 import { ColorThemeManager } from '../managers/ColorThemeManager';
 
-/**
- * UI Controller - Manages all UI interactions and states
- */
 export class UIController {
   private cube: RubiksCube;
   private sceneManager: SceneManager;
@@ -36,7 +33,6 @@ export class UIController {
   private cubeStateManager: CubeStateManager;
   private inputManager: InputManager | null = null;
 
-  // Custom key mappings
   private customKeyMappings = {
     front: 'f',
     back: 'b',
@@ -53,35 +49,22 @@ export class UIController {
     shift: 'SHIFT'
   };
 
-  /**
-   * Get the current scramble steps
-   */
   public get scrambleSteps(): number {
     return this._scrambleSteps;
   }
 
-  /**
-   * Get the current blindfold mode status
-   */
   public getBlindfoldMode(): boolean {
     return this.blindfoldModeEnabled;
   }
 
-  /**
-   * Get the current save record status
-   */
   public getSaveRecordEnabled(): boolean {
     return this.saveRecordEnabled;
   }
 
-  /**
-   * Get the current timer running status
-   */
   public getIsTimerRunning(): boolean {
     return this.isTimerRunning;
   }
 
-  // DOM Elements grouped by category
   private elements = {
     // Header controls
     header: {
@@ -100,14 +83,12 @@ export class UIController {
       toggleUIBtn: document.getElementById('toggleUIBtn') as HTMLButtonElement,
     },
 
-    // Side Panel
     panel: {
       sidePanel: document.getElementById('sidePanel') as HTMLElement,
       panelToggle: document.getElementById('panelToggle') as HTMLElement,
       panelToggleCollapsed: document.getElementById('panelToggleCollapsed') as HTMLElement,
     },
 
-    // Statistics
     stats: {
       timerDisplay: document.getElementById('timerDisplay') as HTMLElement,
       timerToggle: document.getElementById('timerToggle') as HTMLButtonElement,
@@ -117,7 +98,6 @@ export class UIController {
       lastTimes: document.getElementById('lastTimes') as HTMLElement,
     },
 
-    // Options
     options: {
       scrambleSteps: document.getElementById('scrambleSteps') as HTMLInputElement,
       resetScrambleSteps: document.getElementById('resetScrambleSteps') as HTMLButtonElement,
@@ -125,7 +105,6 @@ export class UIController {
       autoTimer: document.getElementById('autoTimer') as HTMLInputElement,
     },
 
-    // Appearance
     appearance: {
       cubeSize: document.getElementById('cubeSize') as HTMLSelectElement,
       animationSpeed: document.getElementById('animationSpeed') as HTMLSelectElement,
@@ -164,7 +143,7 @@ export class UIController {
       rotateInnerBottom: document.getElementById('rotateInnerBottom') as HTMLButtonElement,
       rotateInnerBottomPrime: document.getElementById('rotateInnerBottomPrime') as HTMLButtonElement,
       
-      // Third layer rotation buttons (3rd layer - for 6x6x6 only)
+      // Third layer rotation buttons (3rd layer - for 6x6x6 and 10x10x10)
       rotateThirdFront: document.getElementById('rotateThirdFront') as HTMLButtonElement,
       rotateThirdFrontPrime: document.getElementById('rotateThirdFrontPrime') as HTMLButtonElement,
       rotateThirdBack: document.getElementById('rotateThirdBack') as HTMLButtonElement,
@@ -177,6 +156,34 @@ export class UIController {
       rotateThirdTopPrime: document.getElementById('rotateThirdTopPrime') as HTMLButtonElement,
       rotateThirdBottom: document.getElementById('rotateThirdBottom') as HTMLButtonElement,
       rotateThirdBottomPrime: document.getElementById('rotateThirdBottomPrime') as HTMLButtonElement,
+      
+      // Fourth layer rotation buttons (4th layer - for 10x10x10 only)
+      rotateFourthFront: document.getElementById('rotateFourthFront') as HTMLButtonElement,
+      rotateFourthFrontPrime: document.getElementById('rotateFourthFrontPrime') as HTMLButtonElement,
+      rotateFourthBack: document.getElementById('rotateFourthBack') as HTMLButtonElement,
+      rotateFourthBackPrime: document.getElementById('rotateFourthBackPrime') as HTMLButtonElement,
+      rotateFourthRight: document.getElementById('rotateFourthRight') as HTMLButtonElement,
+      rotateFourthRightPrime: document.getElementById('rotateFourthRightPrime') as HTMLButtonElement,
+      rotateFourthLeft: document.getElementById('rotateFourthLeft') as HTMLButtonElement,
+      rotateFourthLeftPrime: document.getElementById('rotateFourthLeftPrime') as HTMLButtonElement,
+      rotateFourthTop: document.getElementById('rotateFourthTop') as HTMLButtonElement,
+      rotateFourthTopPrime: document.getElementById('rotateFourthTopPrime') as HTMLButtonElement,
+      rotateFourthBottom: document.getElementById('rotateFourthBottom') as HTMLButtonElement,
+      rotateFourthBottomPrime: document.getElementById('rotateFourthBottomPrime') as HTMLButtonElement,
+      
+      // Fifth layer rotation buttons (5th layer - for 10x10x10 only)
+      rotateFifthFront: document.getElementById('rotateFifthFront') as HTMLButtonElement,
+      rotateFifthFrontPrime: document.getElementById('rotateFifthFrontPrime') as HTMLButtonElement,
+      rotateFifthBack: document.getElementById('rotateFifthBack') as HTMLButtonElement,
+      rotateFifthBackPrime: document.getElementById('rotateFifthBackPrime') as HTMLButtonElement,
+      rotateFifthRight: document.getElementById('rotateFifthRight') as HTMLButtonElement,
+      rotateFifthRightPrime: document.getElementById('rotateFifthRightPrime') as HTMLButtonElement,
+      rotateFifthLeft: document.getElementById('rotateFifthLeft') as HTMLButtonElement,
+      rotateFifthLeftPrime: document.getElementById('rotateFifthLeftPrime') as HTMLButtonElement,
+      rotateFifthTop: document.getElementById('rotateFifthTop') as HTMLButtonElement,
+      rotateFifthTopPrime: document.getElementById('rotateFifthTopPrime') as HTMLButtonElement,
+      rotateFifthBottom: document.getElementById('rotateFifthBottom') as HTMLButtonElement,
+      rotateFifthBottomPrime: document.getElementById('rotateFifthBottomPrime') as HTMLButtonElement,
       rotateMiddle: document.getElementById('rotateMiddle') as HTMLButtonElement,
       rotateMiddlePrime: document.getElementById('rotateMiddlePrime') as HTMLButtonElement,
       rotateEquator: document.getElementById('rotateEquator') as HTMLButtonElement,
@@ -354,15 +361,14 @@ export class UIController {
       this.toggleTheme();
     });
 
-    // Main controls
     this.elements.main.scrambleBtn.addEventListener('click', () => {
       this.handleScramble();
     });
-    
+
     this.elements.main.resetBtn.addEventListener('click', () => {
       this.handleReset();
     });
-    
+
     this.elements.main.solveBtn.addEventListener('click', () => {
       this.handleSolve();
     });
@@ -467,12 +473,11 @@ export class UIController {
       this.saveSettings();
     });
 
-    // Appearance controls
     this.elements.appearance.cubeSize.addEventListener('change', async (e) => {
       const size = parseInt((e.target as HTMLSelectElement).value);
       await this.handleCubeSizeChange(size);
     });
-    
+
     this.elements.appearance.animationSpeed.addEventListener('change', (e) => {
       const speed = (e.target as HTMLSelectElement).value;
       this.handleAnimationSpeedChange(speed);
@@ -669,6 +674,104 @@ export class UIController {
     
     this.elements.rotation.rotateThirdBottomPrime?.addEventListener('click', async () => {
       await this.handleThirdLayerRotation('BOTTOM', false);
+    });
+    
+    // Fourth layer rotation buttons (10x10x10 only)
+    this.elements.rotation.rotateFourthFront?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('FRONT', true);
+    });
+    
+    this.elements.rotation.rotateFourthFrontPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('FRONT', false);
+    });
+    
+    this.elements.rotation.rotateFourthBack?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('BACK', true);
+    });
+    
+    this.elements.rotation.rotateFourthBackPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('BACK', false);
+    });
+    
+    this.elements.rotation.rotateFourthRight?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('RIGHT', true);
+    });
+    
+    this.elements.rotation.rotateFourthRightPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('RIGHT', false);
+    });
+    
+    this.elements.rotation.rotateFourthLeft?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('LEFT', true);
+    });
+    
+    this.elements.rotation.rotateFourthLeftPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('LEFT', false);
+    });
+    
+    this.elements.rotation.rotateFourthTop?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('TOP', true);
+    });
+    
+    this.elements.rotation.rotateFourthTopPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('TOP', false);
+    });
+    
+    this.elements.rotation.rotateFourthBottom?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('BOTTOM', true);
+    });
+    
+    this.elements.rotation.rotateFourthBottomPrime?.addEventListener('click', async () => {
+      await this.handleFourthLayerRotation('BOTTOM', false);
+    });
+    
+    // Fifth layer rotation buttons (10x10x10 only)
+    this.elements.rotation.rotateFifthFront?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('FRONT', true);
+    });
+    
+    this.elements.rotation.rotateFifthFrontPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('FRONT', false);
+    });
+    
+    this.elements.rotation.rotateFifthBack?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('BACK', true);
+    });
+    
+    this.elements.rotation.rotateFifthBackPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('BACK', false);
+    });
+    
+    this.elements.rotation.rotateFifthRight?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('RIGHT', true);
+    });
+    
+    this.elements.rotation.rotateFifthRightPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('RIGHT', false);
+    });
+    
+    this.elements.rotation.rotateFifthLeft?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('LEFT', true);
+    });
+    
+    this.elements.rotation.rotateFifthLeftPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('LEFT', false);
+    });
+    
+    this.elements.rotation.rotateFifthTop?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('TOP', true);
+    });
+    
+    this.elements.rotation.rotateFifthTopPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('TOP', false);
+    });
+    
+    this.elements.rotation.rotateFifthBottom?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('BOTTOM', true);
+    });
+    
+    this.elements.rotation.rotateFifthBottomPrime?.addEventListener('click', async () => {
+      await this.handleFifthLayerRotation('BOTTOM', false);
     });
     
     this.elements.rotation.rotateMiddle?.addEventListener('click', async () => {
@@ -1307,10 +1410,13 @@ export class UIController {
       return;
     }
     
+    // First expand any note shortcuts before validation
+    const expandedSequence = this.expandNoteShortcuts(sequence);
+    
     // Check for invalid number prefixes before x, y, z, M, E, S
     // Match any digit followed by x, y, z, M, E, S with various possible formats
     const invalidNumberedMoves = /(^|\s)\d+[xyzMES]('?\d*)?($|\s|')/;
-    if (invalidNumberedMoves.test(sequence)) {
+    if (invalidNumberedMoves.test(expandedSequence)) {
       this.showSequenceFeedback('Invalid sequence syntax. The moves x, y, z, M, E, S cannot have numbers before them.', 'error');
       return;
     }
@@ -1319,9 +1425,8 @@ export class UIController {
     if (this.isEvenLayeredCube()) {
       // Check for middle layer moves (M, E, S)
       const invalidMovesEvenLayered = /[mes]/i;
-      if (invalidMovesEvenLayered.test(sequence)) {
-        const cubeType = this.is2x2Cube() ? '2x2x2' : '4x4x4';
-        this.showSequenceFeedback(`Invalid moves for ${cubeType} cube. Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
+      if (invalidMovesEvenLayered.test(expandedSequence)) {
+        this.showSequenceFeedback(`Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
         return;
       }
       
@@ -1329,7 +1434,7 @@ export class UIController {
       // Wide moves are now allowed for 4x4x4
       if (this.is2x2Cube()) {
         const invalidMoves2x2 = /[fbruld]w|^[fbruld](?![2'])|(\s+)[fbruld](?![2'])/g;
-        if (invalidMoves2x2.test(sequence)) {
+        if (invalidMoves2x2.test(expandedSequence)) {
           this.showSequenceFeedback('Invalid moves for 2x2x2 cube. Wide moves are not supported on 2x2 cubes.', 'error');
           return;
         }
@@ -1337,7 +1442,7 @@ export class UIController {
     }
 
     // Parse and validate sequence
-    const moves = this.parseSequence(sequence);
+    const moves = this.parseSequence(expandedSequence);
     if (!moves) {
       this.showSequenceFeedback('Invalid sequence syntax', 'error');
       return;
@@ -1353,8 +1458,7 @@ export class UIController {
       );
       
       if (invalidMove) {
-        const cubeType = this.is2x2Cube() ? '2x2x2' : '4x4x4';
-        this.showSequenceFeedback(`Invalid moves for ${cubeType} cube. Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
+        this.showSequenceFeedback(`Middle layer moves (M, E, S) are not supported on even-layered cubes.`, 'error');
         return;
       }
       
@@ -1405,8 +1509,7 @@ export class UIController {
     const moves: Array<{type: string, face?: string, clockwise: boolean, double?: boolean, invalid2x2?: boolean}> = [];
     let processedSequence = sequence;
 
-    // Replace note shortcuts (starting with !)
-    processedSequence = this.expandNoteShortcuts(processedSequence);
+    // Note: Note shortcuts have already been expanded in handleExecuteSequence
 
     // Replace grouped moves with repetition for both () and []
     processedSequence = processedSequence.replace(/\(\s*([^)]+)\s*\)(\d+)?/g, (_, group, rep) => {
@@ -1481,7 +1584,7 @@ export class UIController {
       // Check for inner slice notation for 4x4x4, 5x5x5, and 6x6x6 cubes (2F, 2R, 3F, etc.)
       // Also accept more general form like 3F for 5x5/6x6 cubes
       const innerSliceMatch = baseToken.match(/^(\d+)([FBRLUDMESXYZ])('?)(\d*)('?)$/);
-      if (innerSliceMatch && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube())) {
+      if (innerSliceMatch && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube() || this.is10x10Cube())) {
         // This is an inner slice rotation for 4x4x4 or 5x5x5 cube
         const layerIdx = parseInt(innerSliceMatch[1]);
         const faceLetter = innerSliceMatch[2];
@@ -1495,8 +1598,25 @@ export class UIController {
         const repetitionStr = innerSliceMatch[4] || '1';
         const repetitionNum = parseInt(repetitionStr);
         
+        // For 4x4x4, 6x6x6, and 10x10x10 cubes, treat '1F' as 'F', '1U' as 'U', etc.
+        if (layerIdx === 1 && (this.is4x4Cube() || this.is6x6Cube() || this.is10x10Cube())) {
+          // Create a standard face move instead of an inner slice move
+          const moveObj: any = {
+            type: 'face',
+            face: this.convertFaceLetter(faceLetter),
+            clockwise: !isPrime
+          };
+          
+          if (repetitionNum > 1) {
+            moveObj.repetition = repetitionNum;
+          }
+          
+          moves.push(moveObj);
+          continue;
+        }
+        
         // Validate layer index for cube size
-        const maxLayer = this.is6x6Cube() ? 5 : (this.is5x5Cube() ? 4 : (this.is4x4Cube() ? 3 : 1));
+        const maxLayer = this.is10x10Cube() ? 9 : (this.is6x6Cube() ? 5 : (this.is5x5Cube() ? 4 : (this.is4x4Cube() ? 3 : 1)));
         if (layerIdx > maxLayer || layerIdx < 1) {
           // Layer index out of bounds
           return null;
@@ -1628,7 +1748,9 @@ export class UIController {
       // If there's a number prefix like 2Uw, use that number as layer count
       layerCount = parseInt(numMatch[1]);
       // Make sure layerCount is valid for the cube size
-      if (this.is5x5Cube()) {
+      if (this.is10x10Cube()) {
+        layerCount = Math.min(layerCount, 9); // Max 9 layers for 10x10
+      } else if (this.is5x5Cube()) {
         layerCount = Math.min(layerCount, 4); // Max 4 layers for 5x5
       } else if (this.is6x6Cube()) {
         layerCount = Math.min(layerCount, 5); // Max 5 layers for 6x6
@@ -1638,9 +1760,11 @@ export class UIController {
         layerCount = Math.min(layerCount, 2); // Max 2 layers for 3x3
       }
     }
-    // If there's no number prefix, use default counts for 5x5x5 and 6x6x6
+    // If there's no number prefix, use default counts for 5x5x5, 6x6x6 and 10x10x10
     else if (this.is5x5Cube() || this.is6x6Cube()) {
       layerCount = 3; // Default to 3 layers for 5x5x5 and 6x6x6
+    } else if (this.is10x10Cube()) {
+      layerCount = 5; // Default to 5 layers for 10x10x10
     }
 
     // Normalize base notation
@@ -1668,7 +1792,7 @@ export class UIController {
    * Execute a single move
    */
   private async executeMove(move: {type: string, face?: string, clockwise: boolean, repetition?: number}): Promise<void> {
-    if (move.type === 'thirdLayerSlice' && move.face && this.is6x6Cube()) {
+    if (move.type === 'thirdLayerSlice' && move.face && (this.is6x6Cube() || this.is10x10Cube())) {
       // Handle third layer slice rotation for 6x6x6 cube
       const repetition = move.repetition || 1;
       const cube = this.getCurrentCube() as any;
@@ -1689,13 +1813,13 @@ export class UIController {
       return;
     }
     
-    if (move.type === 'innerSlice' && move.face && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube())) {
+    if (move.type === 'innerSlice' && move.face && (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube() || this.is10x10Cube())) {
       // Handle inner slice rotation for 4x4x4, 5x5x5, and 6x6x6 cube
       const repetition = move.repetition || 1;
       const cube = this.getCurrentCube() as any;
       const layerIndex = (move as any).layerIndex !== undefined ? (move as any).layerIndex : 1; // Default to second layer (index 1)
       
-      if ((this.is5x5Cube() || this.is6x6Cube()) && cube.rotateInnerSliceAtLayer) {
+      if ((this.is5x5Cube() || this.is6x6Cube() || this.is10x10Cube()) && cube.rotateInnerSliceAtLayer) {
         // For 5x5 cube, use the specific layer rotation method
         // Convert face notation if needed (U -> TOP, etc.)
         const face = move.face;
@@ -1738,7 +1862,7 @@ export class UIController {
       const currentCube = this.getCurrentCube();
       const cubeType = (currentCube as any).getCubeType?.();
 
-      if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
+      if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
         // For 4x4x4 cube, we handle wide moves by rotating both the outer face and inner slice
         // Temporarily disable onMove to prevent double counting
         const originalOnMove = currentCube.onMove;
@@ -1791,6 +1915,21 @@ export class UIController {
                 await (currentCube as any).rotateInnerSlice(face, innerClockwise);
               } else if (layer === 2 && (currentCube as any).rotateThirdLayerSlice) {
                 // For 6x6, use rotateThirdLayerSlice for layer 2
+                await (currentCube as any).rotateThirdLayerSlice(face, innerClockwise);
+              }
+            }
+          } else if (cubeType === '10x10x10') {
+            // For 10x10x10 cube, support up to 5 layers for wide moves
+            const maxLayers = (move as any).layerCount || 5; // Default to 5 if not specified
+            for (let layer = 1; layer < maxLayers; layer++) {
+              if ((currentCube as any).rotateInnerSliceAtLayer) {
+                // We rotate the inner slice at each layer
+                await (currentCube as any).rotateInnerSliceAtLayer(face, innerClockwise, layer);
+              } else if (layer === 1 && (currentCube as any).rotateInnerSlice) {
+                // Fallback to rotateInnerSlice for layer 1
+                await (currentCube as any).rotateInnerSlice(face, innerClockwise);
+              } else if (layer === 2 && (currentCube as any).rotateThirdLayerSlice) {
+                // For 10x10, use rotateThirdLayerSlice for layer 2
                 await (currentCube as any).rotateThirdLayerSlice(face, innerClockwise);
               }
             }
@@ -2498,22 +2637,42 @@ export class UIController {
     // Get the inner slice controls div
     const innerSliceControls = document.getElementById('innerSliceControls');
     const thirdLayerControls = document.getElementById('thirdLayerControls');
+    const fourthLayerControls = document.getElementById('fourthLayerControls');
+    const fifthLayerControls = document.getElementById('fifthLayerControls');
     
     if (innerSliceControls) {
-      // Show inner slice controls for 4x4x4, 5x5x5, and 6x6x6 cubes
-      if (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube()) {
+      // Show inner slice controls for 4x4x4, 5x5x5, 6x6x6, and 10x10x10 cubes
+      if (this.is4x4Cube() || this.is5x5Cube() || this.is6x6Cube() || this.is10x10Cube()) {
         innerSliceControls.style.display = 'block';
       } else {
         innerSliceControls.style.display = 'none';
       }
     }
     
-    // Third layer controls are only for 6x6x6
+    // Third layer controls are for 6x6x6 and 10x10x10
     if (thirdLayerControls) {
-      if (this.is6x6Cube()) {
+      if (this.is6x6Cube() || this.is10x10Cube()) {
         thirdLayerControls.style.display = 'block';
       } else {
         thirdLayerControls.style.display = 'none';
+      }
+    }
+    
+    // Fourth layer controls are for 10x10x10 only
+    if (fourthLayerControls) {
+      if (this.is10x10Cube()) {
+        fourthLayerControls.style.display = 'block';
+      } else {
+        fourthLayerControls.style.display = 'none';
+      }
+    }
+    
+    // Fifth layer controls are for 10x10x10 only
+    if (fifthLayerControls) {
+      if (this.is10x10Cube()) {
+        fifthLayerControls.style.display = 'block';
+      } else {
+        fifthLayerControls.style.display = 'none';
       }
     }
   }
@@ -2664,12 +2823,20 @@ export class UIController {
   }
   
   /**
+   * Check if current cube is a 10x10x10 cube
+   */
+  private is10x10Cube(): boolean {
+    const currentCube = this.getCurrentCube();
+    return (currentCube as any).getCubeType && (currentCube as any).getCubeType() === '10x10x10';
+  }
+  
+  /**
    * Handle inner slice rotation for 4x4x4 and 5x5x5 cubes
    */
   private async handleInnerSliceRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
     try {
-      if (!this.is4x4Cube() && !this.is5x5Cube()) {
-        this.notificationSystem.error('Inner slice rotation is only available for 4x4x4 and 5x5x5 cubes');
+      if (!this.is4x4Cube() && !this.is5x5Cube() && !this.is6x6Cube() && !this.is10x10Cube()) {
+        this.notificationSystem.error('Inner slice rotation is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10 cubes');
         return;
       }
       
@@ -2702,8 +2869,8 @@ export class UIController {
   
   private async handleThirdLayerRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
     try {
-      if (!this.is6x6Cube()) {
-        this.notificationSystem.error('Third layer slice rotation is only available for 6x6x6 cubes');
+      if (!this.is6x6Cube() && !this.is10x10Cube()) {
+        this.notificationSystem.error('Third layer slice rotation is only available for 6x6x6 and 10x10x10 cubes');
         return;
       }
       
@@ -2735,11 +2902,87 @@ export class UIController {
   }
   
   /**
-   * Check if current cube has an even number of layers (2x2, 4x4, etc.)
+   * Handle rotation of the 4th layer slice
+   * Only available for 10x10x10 cube
+   */
+  private async handleFourthLayerRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
+    try {
+      if (!this.is10x10Cube()) {
+        this.notificationSystem.error('Fourth layer slice rotation is only available for 10x10x10 cubes');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube() as any;
+      
+      if (!currentCube.rotateInnerSliceAtLayer) {
+        this.notificationSystem.error('Layer slice rotation not supported by current cube');
+        return;
+      }
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !clockwise;
+      }
+      
+      // Rotate the fourth layer slice with adjusted direction (layer index 3)
+      await currentCube.rotateInnerSliceAtLayer(face, adjustedClockwise, 3);
+      
+      // Always increment moves count
+      this.moveCount++;
+      this.updateMoveCounter();
+      
+      // Play sound
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating fourth layer slice:", error);
+    }
+  }
+  
+  /**
+   * Handle rotation of the 5th layer slice
+   * Only available for 10x10x10 cube
+   */
+  private async handleFifthLayerRotation(face: 'FRONT' | 'BACK' | 'RIGHT' | 'LEFT' | 'TOP' | 'BOTTOM', clockwise: boolean): Promise<void> {
+    try {
+      if (!this.is10x10Cube()) {
+        this.notificationSystem.error('Fifth layer slice rotation is only available for 10x10x10 cubes');
+        return;
+      }
+      
+      const currentCube = this.getCurrentCube() as any;
+      
+      if (!currentCube.rotateInnerSliceAtLayer) {
+        this.notificationSystem.error('Layer slice rotation not supported by current cube');
+        return;
+      }
+      
+      // For F, R, U faces, we need to invert the clockwise value to match expected behavior
+      let adjustedClockwise = clockwise;
+      if (face === 'FRONT' || face === 'RIGHT' || face === 'TOP') {
+        adjustedClockwise = !clockwise;
+      }
+      
+      // Rotate the fifth layer slice with adjusted direction (layer index 4)
+      await currentCube.rotateInnerSliceAtLayer(face, adjustedClockwise, 4);
+      
+      // Always increment moves count
+      this.moveCount++;
+      this.updateMoveCounter();
+      
+      // Play sound
+      this.playSound('move');
+    } catch (error) {
+      console.error("Error rotating fifth layer slice:", error);
+    }
+  }
+  
+  /**
+   * Check if current cube has an even number of layers (2x2, 4x4, 6x6, 10x10, etc.)
    * These cubes don't support middle layer rotations
    */
   private isEvenLayeredCube(): boolean {
-    return this.is2x2Cube() || this.is4x4Cube();
+    return this.is2x2Cube() || this.is4x4Cube() || this.is6x6Cube() || this.is10x10Cube();
   }
 
   /**

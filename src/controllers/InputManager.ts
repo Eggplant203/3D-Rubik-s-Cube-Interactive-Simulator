@@ -19,6 +19,8 @@ export class KeyboardController implements InputHandler {
   private uiController: UIController | null;
   private is2KeyPressed: boolean = false;
   private is3KeyPressed: boolean = false;
+  private is4KeyPressed: boolean = false;
+  private is5KeyPressed: boolean = false;
 
   // Custom key mappings
   private keyMappings = {
@@ -82,6 +84,16 @@ export class KeyboardController implements InputHandler {
     // Reset the '3' key state when it's released
     if (event.key === '3') {
       this.is3KeyPressed = false;
+    }
+    
+    // Reset the '4' key state when it's released
+    if (event.key === '4') {
+      this.is4KeyPressed = false;
+    }
+    
+    // Reset the '5' key state when it's released
+    if (event.key === '5') {
+      this.is5KeyPressed = false;
     }
   }
 
@@ -185,9 +197,19 @@ export class KeyboardController implements InputHandler {
       this.is2KeyPressed = true;
     }
     
-    // Track '3' key state for third layer rotations (6x6x6)
+    // Track '3' key state for third layer rotations (6x6x6 and 10x10x10)
     if (event.key === '3') {
       this.is3KeyPressed = true;
+    }
+    
+    // Track '4' key state for fourth layer rotations (10x10x10)
+    if (event.key === '4') {
+      this.is4KeyPressed = true;
+    }
+    
+    // Track '5' key state for fifth layer rotations (10x10x10)
+    if (event.key === '5') {
+      this.is5KeyPressed = true;
     }
     
     // Handle undo/redo with Ctrl+Z/Y
@@ -253,23 +275,41 @@ export class KeyboardController implements InputHandler {
     if (normalizedKey === this.keyMappings.front) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('FRONT', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('FRONT', isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('FRONT', isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('FRONT', isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {
@@ -278,23 +318,41 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.back) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('BACK', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('BACK', !isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('BACK', !isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('BACK', !isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {
@@ -303,23 +361,41 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.right) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('RIGHT', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('RIGHT', isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('RIGHT', isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('RIGHT', isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {
@@ -328,23 +404,41 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.left) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('LEFT', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('LEFT', !isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('LEFT', !isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('LEFT', !isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {
@@ -353,23 +447,41 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.up) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('TOP', isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('TOP', isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('TOP', isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('TOP', isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {
@@ -378,23 +490,41 @@ export class KeyboardController implements InputHandler {
     } else if (normalizedKey === this.keyMappings.down) {
       event.preventDefault();
       if (this.is2KeyPressed) {
-        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6') {
-          // For 4x4x4, 5x5x5 and 6x6x6, rotate the second layer (inner slice) - same direction as outer face
+        if (cubeType === '4x4x4' || cubeType === '5x5x5' || cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 4x4x4, 5x5x5, 6x6x6, and 10x10x10, rotate the second layer (inner slice) - same direction as outer face
           (this.cube as any).rotateInnerSlice('BOTTOM', !isShiftPressed);
         } else {
-          // Show notification that 2 + key is only available for 4x4x4, 5x5x5 and 6x6x6
+          // Show notification that 2 + key is only available for 4x4x4, 5x5x5, 6x6x6, and 10x10x10
           if (this.uiController) {
             this.uiController.showNotification('Inner layer rotations are not available', 'info', 2000);
           }
         }
       } else if (this.is3KeyPressed) {
-        if (cubeType === '6x6x6') {
-          // For 6x6x6, rotate the third layer - same direction as outer face
+        if (cubeType === '6x6x6' || cubeType === '10x10x10') {
+          // For 6x6x6 and 10x10x10, rotate the third layer - same direction as outer face
           (this.cube as any).rotateThirdLayerSlice('BOTTOM', !isShiftPressed);
         } else {
-          // Show notification that 3 + key is only available for 6x6x6
+          // Show notification that 3 + key is only available for 6x6x6 and 10x10x10
           if (this.uiController) {
-            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 cubes', 'info', 2000);
+            this.uiController.showNotification('Third layer rotations are only available for 6x6x6 and 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is4KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fourth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('BOTTOM', !isShiftPressed, 3);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fourth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
+          }
+        }
+      } else if (this.is5KeyPressed) {
+        if (cubeType === '10x10x10') {
+          // For 10x10x10, rotate the fifth layer - same direction as outer face
+          (this.cube as any).rotateInnerSliceAtLayer('BOTTOM', !isShiftPressed, 4);
+        } else {
+          if (this.uiController) {
+            this.uiController.showNotification('Fifth layer rotations are only available for 10x10x10 cubes', 'info', 2000);
           }
         }
       } else {

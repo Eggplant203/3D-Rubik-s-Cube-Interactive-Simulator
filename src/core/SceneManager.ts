@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-/**
- * Manages the Three.js scene, camera, renderer, and controls
- */
 export class SceneManager {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -22,9 +19,6 @@ export class SceneManager {
     this.setupEventListeners();
   }
 
-  /**
-   * Creates and configures the camera
-   */
   private createCamera(): THREE.PerspectiveCamera {
     const rect = this.container.getBoundingClientRect();
     const camera = new THREE.PerspectiveCamera(
@@ -33,18 +27,13 @@ export class SceneManager {
       0.1,
       1000
     );
-    
-    // Position camera to center the cube between controls and bottom bar
-    // Slightly zoomed in and angled toward the front face
+
     camera.position.set(4.5, 5, 6);
     camera.lookAt(0, 2, 0);
-    
+
     return camera;
   }
 
-  /**
-   * Creates and configures the WebGL renderer
-   */
   private createRenderer(): THREE.WebGLRenderer {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,

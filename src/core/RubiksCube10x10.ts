@@ -19,41 +19,41 @@ interface CubeState {
 type FaceType = keyof typeof FACES;
 
 /**
- * 6x6x6 Rubik's Cube implementation
- * Inherits from RubiksCube but with specific 6x6x6 logic
+ * 10x10x10 Rubik's Cube implementation
+ * Inherits from RubiksCube but with specific 10x10x10 logic
  */
-export class RubiksCube6x6 extends RubiksCube {
+export class RubiksCube10x10 extends RubiksCube {
   
   constructor(scene: THREE.Scene) {
     // Apply standard configuration before calling super constructor
-    standardizeCubeConfig('6x6x6');
+    standardizeCubeConfig('10x10x10');
     
     super(scene);
     
-    // Use inverted direction handler like 2x2 and 4x4 cube
+    // Use inverted direction handler like 2x2, 4x4, and 6x6 cube (even-numbered cubes)
     this.directionHandler = new InvertedDirectionHandler();
     
-    // Reinitialize with 6x6x6 configuration
+    // Reinitialize with 10x10x10 configuration
     this.reinitialize();
   }
 
   /**
-   * Standardize the cube configuration for 6x6x6
+   * Standardize the cube configuration for 10x10x10
    */
-  private standardize6x6Config(): void {
+  private standardize10x10Config(): void {
     // Use the standardizeCubeConfig function
-    standardizeCubeConfig('6x6x6');
+    standardizeCubeConfig('10x10x10');
   }
 
   /**
-   * Reinitialize the cube with 6x6x6 configuration
+   * Reinitialize the cube with 10x10x10 configuration
    */
   private reinitialize(): void {
     // Clear existing cubelets
     this.clearCube();
     
-    // Initialize 6x6x6 cube
-    this.initialize6x6();
+    // Initialize 10x10x10 cube
+    this.initialize10x10();
   }
 
   /**
@@ -76,13 +76,13 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Initialize 6x6x6 cube with proper spacing
+   * Initialize 10x10x10 cube with proper spacing
    */
-  private initialize6x6(): void {
-    // Ensure config is set for 6x6x6
-    this.standardize6x6Config();
+  private initialize10x10(): void {
+    // Ensure config is set for 10x10x10
+    this.standardize10x10Config();
     
-    const size = 6;
+    const size = 10;
     const cubeSize = CUBE_CONFIG.cubeSize;
     const spacing = CUBE_CONFIG.spacing;
     const offset = (size - 1) * (cubeSize + spacing) / 2;
@@ -99,7 +99,7 @@ export class RubiksCube6x6 extends RubiksCube {
             z * (cubeSize + spacing) - offset
           );
 
-          const colors = this.determineCubeletColors6x6(x, y, z, size);
+          const colors = this.determineCubeletColors10x10(x, y, z, size);
           const cubelet = new Cubelet(position, colors);
           
           cubelets.push(cubelet);
@@ -113,14 +113,14 @@ export class RubiksCube6x6 extends RubiksCube {
     this.setCubelets(cubelets);
     this.setOriginalPositions(originalPositions);
     
-    // Keep size as 6 for proper face rotation
-    CUBE_CONFIG.size = 6;
+    // Keep size as 10 for proper face rotation
+    CUBE_CONFIG.size = 10;
   }
 
   /**
-   * Determine colors for 6x6x6 cubelet based on position
+   * Determine colors for 10x10x10 cubelet based on position
    */
-  private determineCubeletColors6x6(x: number, y: number, z: number, size: number): string[] {
+  private determineCubeletColors10x10(x: number, y: number, z: number, size: number): string[] {
     const colors: string[] = new Array(6).fill('#333333'); // Default internal color
     
     // Right face (+X)
@@ -140,23 +140,23 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Get available moves for 6x6x6 cube
-   * Basic face rotations, inner slice rotations (layers 2 and 3 from outside)
+   * Get available moves for 10x10x10 cube
+   * Basic face rotations and inner slice rotations (layers 2-5 from outside)
    */
   public getAvailableMoves(): string[] {
     return [
-      'F', "F'", 'F2', "F2'", 'F3', "F3'",    // Front, Front inner slices
-      'B', "B'", 'B2', "B2'", 'B3', "B3'",    // Back, Back inner slices
-      'R', "R'", 'R2', "R2'", 'R3', "R3'",    // Right, Right inner slices
-      'L', "L'", 'L2', "L2'", 'L3', "L3'",    // Left, Left inner slices
-      'U', "U'", 'U2', "U2'", 'U3', "U3'",    // Up, Up inner slices
-      'D', "D'", 'D2', "D2'", 'D3', "D3'",    // Down, Down inner slices
-      'X', "X'", 'Y', "Y'", 'Z', "Z'"         // Whole cube rotations
+      'F', "F'", 'F2', "F2'", 'F3', "F3'", 'F4', "F4'", 'F5', "F5'",    // Front, Front inner slices
+      'B', "B'", 'B2', "B2'", 'B3', "B3'", 'B4', "B4'", 'B5', "B5'",    // Back, Back inner slices
+      'R', "R'", 'R2', "R2'", 'R3', "R3'", 'R4', "R4'", 'R5', "R5'",    // Right, Right inner slices
+      'L', "L'", 'L2', "L2'", 'L3', "L3'", 'L4', "L4'", 'L5', "L5'",    // Left, Left inner slices
+      'U', "U'", 'U2', "U2'", 'U3', "U3'", 'U4', "U4'", 'U5', "U5'",    // Up, Up inner slices
+      'D', "D'", 'D2', "D2'", 'D3', "D3'", 'D4', "D4'", 'D5', "D5'",    // Down, Down inner slices
+      'X', "X'", 'Y', "Y'", 'Z', "Z'"                                    // Whole cube rotations
     ];
   }
 
   /**
-   * Execute move sequence for 6x6x6 cube
+   * Execute move sequence for 10x10x10 cube
    */
   public async executeMove(move: string): Promise<void> {
     const trimmedMove = move.trim();
@@ -164,8 +164,8 @@ export class RubiksCube6x6 extends RubiksCube {
     // Remove the prime symbol for parsing
     const baseMoveWithLayer = trimmedMove.replace("'", "");
     
-    // Check if it's a layered move (e.g., F2 or F3 for inner layers)
-    const hasLayer = /[FBRLUDFMSE][2-3]/.test(baseMoveWithLayer);
+    // Check if it's a layered move (e.g., F2, F3, F4, or F5 for inner layers)
+    const hasLayer = /[FBRLUDFMSE][2-5]/.test(baseMoveWithLayer);
     const layer = hasLayer ? parseInt(baseMoveWithLayer.slice(-1)) : 1;
     const baseMove = hasLayer ? baseMoveWithLayer.slice(0, -1) : baseMoveWithLayer;
 
@@ -183,10 +183,9 @@ export class RubiksCube6x6 extends RubiksCube {
         const face = faceMap[baseMove.toUpperCase()];
         if (layer === 1) {
           await this.rotateFace(face, !isPrime);
-        } else if (layer === 2) {
-          await this.rotateInnerSlice(face, !isPrime);
-        } else if (layer === 3) {
-          await this.rotateThirdLayerSlice(face, !isPrime);
+        } else if (layer >= 2 && layer <= 5) {
+          // Use a generic inner slice rotation method that takes a layer parameter
+          await this.rotateInnerSliceAtLayer(face, !isPrime, layer - 1);
         }
         break;
       case 'X':
@@ -199,22 +198,23 @@ export class RubiksCube6x6 extends RubiksCube {
         await this.rotateCubeZ(isPrime);
         break;
       default:
-        throw new Error(`Invalid move for 6x6x6 cube: ${move}`);
+        throw new Error(`Invalid move for 10x10x10 cube: ${move}`);
     }
   }
 
   /**
-   * Generate scramble sequence for 6x6x6
+   * Generate scramble sequence for 10x10x10
    */
-  public generateScrambleSequence(steps: number = 35): string[] {
-    // Include outer face moves and inner slice moves for 6x6
+  public generateScrambleSequence(steps: number = 70): string[] {
+    // Include outer face moves and inner slice moves for 10x10
     const moves = [
       // Outer face moves
       'F', "F'", 'B', "B'", 'R', "R'", 'L', "L'", 'U', "U'", 'D', "D'", 
-      // Inner slice moves (2nd from outside)
+      // Inner slice moves (2nd to 5th layer from outside)
       'F2', "F2'", 'B2', "B2'", 'R2', "R2'", 'L2', "L2'", 'U2', "U2'", 'D2', "D2'",
-      // Inner slice moves (3rd from outside)
-      'F3', "F3'", 'B3', "B3'", 'R3', "R3'", 'L3', "L3'", 'U3', "U3'", 'D3', "D3'"
+      'F3', "F3'", 'B3', "B3'", 'R3', "R3'", 'L3', "L3'", 'U3', "U3'", 'D3', "D3'",
+      'F4', "F4'", 'B4', "B4'", 'R4', "R4'", 'L4', "L4'", 'U4', "U4'", 'D4', "D4'",
+      'F5', "F5'", 'B5', "B5'", 'R5', "R5'", 'L5', "L5'", 'U5', "U5'", 'D5', "D5'"
     ];
     
     const sequence: string[] = [];
@@ -235,9 +235,9 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Override the parent scramble method for 6x6x6 cube
+   * Override the parent scramble method for 10x10x10 cube
    */
-  public async scramble(moves: number = 35): Promise<void> {
+  public async scramble(moves: number = 70): Promise<void> {
     // Check if the cube has been disposed
     if ((this as any).isDisposed) return;
     
@@ -277,10 +277,10 @@ export class RubiksCube6x6 extends RubiksCube {
 
   /**
    * Get cube state as a 2D representation for each face
-   * This overrides the parent method to handle 6x6x6 specific logic
+   * This overrides the parent method to handle 10x10x10 specific logic
    */
   public getCubeState(): CubeState {
-    const size = 6;
+    const size = 10;
     const cubelets = (this as any).cubelets;
     
     // Initialize the state object with empty arrays
@@ -333,7 +333,7 @@ export class RubiksCube6x6 extends RubiksCube {
    * Get cube type identifier
    */
   public getCubeType(): string {
-    return '6x6x6';
+    return '10x10x10';
   }
   
   /**
@@ -348,7 +348,7 @@ export class RubiksCube6x6 extends RubiksCube {
    * Get complexity level
    */
   public getComplexityLevel(): number {
-    return 5; // Higher complexity than 2x2, 3x3, 4x4, and 5x5
+    return 10; // Maximum complexity
   }
   
   /**
@@ -360,135 +360,47 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Override middle slice rotations - not available in even-layered cubes like 6x6x6
+   * Override middle slice rotations - not available in even-layered cubes like 10x10x10
    */
   public async rotateMiddle(_clockwise: boolean = true, _skipHistory: boolean = false): Promise<void> {
-    throw new Error('Middle slice rotation is not available for 6x6x6 cube');
+    throw new Error('Middle slice rotation is not available for 10x10x10 cube');
   }
 
   /**
-   * Override equator rotations - not available in even-layered cubes like 6x6x6
+   * Override equator rotations - not available in even-layered cubes like 10x10x10
    */
   public async rotateEquator(_clockwise: boolean = true, _skipHistory: boolean = false): Promise<void> {
-    throw new Error('Equator rotation is not available for 6x6x6 cube');
+    throw new Error('Equator rotation is not available for 10x10x10 cube');
   }
 
   /**
-   * Override standing rotations - not available in even-layered cubes like 6x6x6
+   * Override standing rotations - not available in even-layered cubes like 10x10x10
    */
   public async rotateStanding(_clockwise: boolean = true, _skipHistory: boolean = false): Promise<void> {
-    throw new Error('Standing rotation is not available for 6x6x6 cube');
+    throw new Error('Standing rotation is not available for 10x10x10 cube');
   }
 
   /**
-   * Inner slice rotation for 6x6x6 cube (second layer from outside)
-   */
-  public async rotateInnerSlice(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
-    if (this.isAnimating()) return;
-    
-    // Add to move history if not skipping
-    if (!skipHistory) {
-      this.addMoveToHistory({ type: 'innerSlice', face, clockwise });
-    }
-
-    // Call onMove callback
-    if (this.onMove) {
-      this.onMove();
-    }
-    
-    // Use a protected method instead of accessing private property
-    this.startAnimation();
-    const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
-    
-    // Get cubelets for the inner slice - layer 2 from the outside
-    const cubelets = this.getInnerSliceCubelets(face);
-    // Use parent method to get face axis
-    const axis = this.getFaceRotationAxis(face);
-    
-    // Play rotation sound
-    this.playSound('rotate');
-    
-    // Create a temporary group to handle rotation animation
-    const rotationGroup = new THREE.Group();
-    this.getCubeGroup().add(rotationGroup);
-    this.setCurrentRotationGroup(rotationGroup);
-    
-    // Move cubelets to rotation group
-    cubelets.forEach(cubelet => {
-      this.getCubeGroup().remove(cubelet.mesh);
-      rotationGroup.add(cubelet.mesh);
-    });
-    
-    return new Promise((resolve) => {
-      const startTime = Date.now();
-      const duration = CUBE_CONFIG.animation.transitionDuration;
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const currentAngle = angle * this.easingFunction(progress);
-        
-        // Reset rotation and apply new rotation
-        rotationGroup.rotation.set(0, 0, 0);
-        rotationGroup.rotateOnAxis(axis, currentAngle);
-        
-        if (progress < 1) {
-          // Store animation frame ID for possible cancellation
-          const animationFrameId = requestAnimationFrame(animate);
-          this.setAnimationFrameId(animationFrameId);
-        } else {
-          // Animation complete - finalize positions
-          this.finalizeSliceRotation(cubelets, rotationGroup, axis, angle);
-          this.getCubeGroup().remove(rotationGroup);
-          this.setCurrentRotationGroup(null);
-          this.stopAnimation();
-          
-          // Check if cube is solved
-          if (this.isSolved() && this.onSolveComplete) {
-            this.onSolveComplete();
-          }
-          
-          resolve();
-        }
-      };
-      
-      animate();
-    });
-  }
-
-  /**
-   * Third layer slice rotation for 6x6x6 cube (third layer from outside)
-   * This is a new feature specific to the 6x6x6 cube
-   */
-  /**
-   * Rotate an inner slice at a specific layer index (for wide moves like Uw, 3Uw)
+   * Rotate an inner slice at a specific layer index
    * Layer index is 0-based, where 0 is the outermost layer (which would be handled by rotateFace)
-   * 1 is the second layer (what rotateInnerSlice handles)
-   * 2 is the third layer (what rotateThirdLayerSlice handles)
+   * 1-4 are the inner layers (second through fifth layers from the outside)
    */
   public async rotateInnerSliceAtLayer(face: FaceType, clockwise: boolean = true, layerIndex: number = 1, skipHistory: boolean = false): Promise<void> {
     if (this.isAnimating()) return;
     
-    // Select the appropriate method based on layer index
-    if (layerIndex === 1) {
-      return this.rotateInnerSlice(face, clockwise, skipHistory);
-    } else if (layerIndex === 2) {
-      return this.rotateThirdLayerSlice(face, clockwise, skipHistory);
-    } else {
-      throw new Error(`Invalid layer index ${layerIndex} for 6x6x6 cube`);
+    // Validate layer index
+    if (layerIndex < 1 || layerIndex > 4) {
+      throw new Error(`Invalid layer index ${layerIndex} for 10x10x10 cube`);
     }
-  }
-
-  /**
-   * Third layer slice rotation for 6x6x6 cube (third layer from outside)
-   * This is a new feature specific to the 6x6x6 cube
-   */
-  public async rotateThirdLayerSlice(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
-    if (this.isAnimating()) return;
     
     // Add to move history if not skipping
     if (!skipHistory) {
-      this.addMoveToHistory({ type: 'thirdLayerSlice', face, clockwise });
+      this.addMoveToHistory({ 
+        type: 'innerSliceLayer', 
+        face, 
+        clockwise,
+        layerIndex 
+      });
     }
 
     // Call onMove callback
@@ -496,12 +408,12 @@ export class RubiksCube6x6 extends RubiksCube {
       this.onMove();
     }
     
-    // Use a protected method instead of accessing private property
+    // Start animation
     this.startAnimation();
     const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
     
-    // Get cubelets for the third layer slice - layer 3 from the outside
-    const cubelets = this.getThirdLayerSliceCubelets(face);
+    // Get cubelets for the specified inner layer
+    const cubelets = this.getInnerSliceCubeletsAtLayer(face, layerIndex);
     // Use parent method to get face axis
     const axis = this.getFaceRotationAxis(face);
     
@@ -557,14 +469,14 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Override reset method to ensure proper 6x6x6 spacing
+   * Override reset method to ensure proper 10x10x10 spacing
    */
   public reset(): void {
     // Stop any ongoing animation first
     this.stopAnimation();
     
-    // Set config for 6x6x6 cube
-    CUBE_CONFIG.size = 6;
+    // Set config for 10x10x10 cube
+    CUBE_CONFIG.size = 10;
     
     // Clear existing cubelets
     const cubeGroup = this.getCubeGroup();
@@ -587,8 +499,8 @@ export class RubiksCube6x6 extends RubiksCube {
     // Reset cube state
     (this as any).rotationLogic.reset();
     
-    // Reinitialize with 6x6x6 configuration
-    this.initialize6x6();
+    // Reinitialize with 10x10x10 configuration
+    this.initialize10x10();
   }
 
   // Protected methods to access parent class private members
@@ -605,8 +517,30 @@ export class RubiksCube6x6 extends RubiksCube {
   }
   
   /**
+   * Rotate the third layer slice for 10x10x10 cube
+   * @param face The face to rotate from
+   * @param clockwise Direction of rotation
+   * @param skipHistory Whether to skip adding to history
+   */
+  public async rotateThirdLayerSlice(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
+    // Use the more general rotateInnerSliceAtLayer method with layerIndex = 2 (third layer)
+    await this.rotateInnerSliceAtLayer(face, clockwise, 2, skipHistory);
+  }
+  
+  /**
+   * Rotate the inner slice (second layer) of the 10x10x10 cube
+   * @param face The face to rotate from
+   * @param clockwise Direction of rotation
+   * @param skipHistory Whether to skip adding to history
+   */
+  public async rotateInnerSlice(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
+    // Use the more general rotateInnerSliceAtLayer method with layerIndex = 1 (second layer)
+    await this.rotateInnerSliceAtLayer(face, clockwise, 1, skipHistory);
+  }
+  
+  /**
    * Override the rotateFace method to use our specific implementation
-   * for selecting cubelets in a 6x6 cube
+   * for selecting cubelets in a 10x10 cube
    */
   public async rotateFace(face: FaceType, clockwise: boolean = true, skipHistory: boolean = false): Promise<void> {
     if ((this as any).animating) return;
@@ -629,7 +563,7 @@ export class RubiksCube6x6 extends RubiksCube {
     (this as any).animating = true;
     const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
     
-    // Get cubelets for the face - using our specialized method for 6x6 cube
+    // Get cubelets for the face - using our specialized method for 10x10 cube
     const cubelets = this.getSpecificFaceCubelets(face);
     const axis = (this as any).getFaceAxis(face);
     
@@ -683,21 +617,21 @@ export class RubiksCube6x6 extends RubiksCube {
   }
   
   /**
-   * Helper method to get face cubelets for 6x6 cube (outermost layer)
+   * Helper method to get face cubelets for 10x10 cube (outermost layer)
    */
   public getSpecificFaceCubelets(face: FaceType): Cubelet[] {
-    const size = 6;
+    const size = 10;
     const halfSize = (size - 1) / 2;
     
     const cubelets = (this as any).cubelets;
     if (!cubelets || !cubelets.length) {
-      console.error('No cubelets found in 6x6 cube!');
+      console.error('No cubelets found in 10x10 cube!');
       return [];
     }
     
     return cubelets.filter((cubelet: Cubelet) => {
       const pos = cubelet.position;
-      // Use a reasonable tolerance for 6x6 since spacing might be different
+      // Use a reasonable tolerance for 10x10 since spacing might be different
       const tolerance = 0.1; 
       
       switch (face) {
@@ -720,12 +654,14 @@ export class RubiksCube6x6 extends RubiksCube {
   }
 
   /**
-   * Get inner slice cubelets for 6x6 cube (second layer from outside)
+   * Get inner slice cubelets for a specific layer in the 10x10 cube
+   * @param face The face to select from
+   * @param layerIndex The layer index (1-4 for a 10x10 cube, where 1 is the 2nd layer from outside)
    */
-  public getInnerSliceCubelets(face: FaceType): Cubelet[] {
+  public getInnerSliceCubeletsAtLayer(face: FaceType, layerIndex: number): Cubelet[] {
     const cubeSize = CUBE_CONFIG.cubeSize;
     const spacing = CUBE_CONFIG.spacing;
-    const size = 6;
+    const size = 10;
     const offset = (size - 1) * (cubeSize + spacing) / 2;
     
     const layerPositions: number[] = [];
@@ -734,64 +670,13 @@ export class RubiksCube6x6 extends RubiksCube {
       layerPositions.push(pos);
     }
     
-    // For 6x6x6, the second layer is at indices 1 and 4
-    const innerPosition1 = layerPositions[1]; // Second layer from one side
-    const innerPosition2 = layerPositions[4]; // Second layer from opposite side
+    // For 10x10x10, we need to get the positions of the layers
+    const innerPosition1 = layerPositions[layerIndex]; // Layer from one side (0-based)
+    const innerPosition2 = layerPositions[size - 1 - layerIndex]; // Layer from opposite side
     
     const cubelets = (this as any).cubelets;
     if (!cubelets || !cubelets.length) {
-      console.error('No cubelets found in 6x6 cube!');
-      return [];
-    }
-    
-    const tolerance = 0.05;
-    
-    const filteredCubelets = cubelets.filter((cubelet: Cubelet) => {
-      const pos = cubelet.position;
-      
-      switch (face) {
-        case 'FRONT':
-          return Math.abs(pos.z - innerPosition2) < tolerance;
-        case 'BACK':
-          return Math.abs(pos.z - innerPosition1) < tolerance;
-        case 'RIGHT':
-          return Math.abs(pos.x - innerPosition2) < tolerance;
-        case 'LEFT':
-          return Math.abs(pos.x - innerPosition1) < tolerance;
-        case 'TOP':
-          return Math.abs(pos.y - innerPosition2) < tolerance;
-        case 'BOTTOM':
-          return Math.abs(pos.y - innerPosition1) < tolerance;
-        default:
-          return false;
-      }
-    });
-    
-    return filteredCubelets;
-  }
-
-  /**
-   * Get third layer slice cubelets for 6x6 cube (third layer from outside)
-   * This is new functionality specific to 6x6x6 cube
-   */
-  public getThirdLayerSliceCubelets(face: FaceType): Cubelet[] {
-    const cubeSize = CUBE_CONFIG.cubeSize;
-    const spacing = CUBE_CONFIG.spacing;
-    const size = 6;
-    const offset = (size - 1) * (cubeSize + spacing) / 2;
-    
-    const layerPositions: number[] = [];
-    for (let i = 0; i < size; i++) {
-      const pos = i * (cubeSize + spacing) - offset;
-      layerPositions.push(pos);
-    }
-    
-    const innerPosition1 = layerPositions[2]; // Third layer from outside
-    const innerPosition2 = layerPositions[size-3]; // Third layer from opposite side
-    
-    const cubelets = (this as any).cubelets;
-    if (!cubelets || !cubelets.length) {
-      console.error('No cubelets found in 6x6 cube!');
+      console.error('No cubelets found in 10x10 cube!');
       return [];
     }
     
@@ -833,32 +718,32 @@ export class RubiksCube6x6 extends RubiksCube {
       const worldPos = new THREE.Vector3();
       const worldQuat = new THREE.Quaternion();
       
-      // Lấy vị trí và quay trong không gian thế giới
+      // Get position and rotation in world space
       cubelet.mesh.getWorldPosition(worldPos);
       cubelet.mesh.getWorldQuaternion(worldQuat);
       
       rotationGroup.remove(cubelet.mesh);
       this.getCubeGroup().add(cubelet.mesh);
       
-      // Cập nhật vị trí trong không gian local
+      // Update position in local space
       cubelet.mesh.position.copy(worldPos);
       this.getCubeGroup().worldToLocal(cubelet.mesh.position);
       
-      // Áp dụng quaternion cho cubelet
+      // Apply quaternion to cubelet
       cubelet.applyRotation(worldQuat);
       
-      // Cập nhật các thuộc tính của cubelet
+      // Update cubelet properties
       cubelet.position.copy(cubelet.mesh.position);
     });
   }
   
   /**
-   * Override the solve method for 6x6x6 cube to correctly handle all rotations
+   * Override the solve method for 10x10x10 cube to correctly handle all rotations
    */
   public async solve(): Promise<void> {
     if (this.isAnimating()) return;
     
-    // Reverse all moves for 6x6 cube
+    // Reverse all moves for 10x10 cube
     const reverseMoves = [...this.getMoveHistory()].reverse();
     
     for (const move of reverseMoves) {
@@ -868,16 +753,10 @@ export class RubiksCube6x6 extends RubiksCube {
             await this.rotateFace(move.face as FaceType, !move.clockwise);
           }
           break;
-        case 'innerSlice':
-          // Handle inner slice rotations (layer 2)
-          if (move.face) {
-            await this.rotateInnerSlice(move.face as FaceType, !move.clockwise);
-          }
-          break;
-        case 'thirdLayerSlice':
-          // Handle third layer slice rotations (layer 3)
-          if (move.face) {
-            await this.rotateThirdLayerSlice(move.face as FaceType, !move.clockwise);
+        case 'innerSliceLayer':
+          // Handle inner slice rotations with layer index
+          if (move.face && move.layerIndex !== undefined) {
+            await this.rotateInnerSliceAtLayer(move.face as FaceType, !move.clockwise, move.layerIndex);
           }
           break;
         case 'cubeX':

@@ -92,7 +92,14 @@ export class CubeStateManager {
 
     // Get cube type information
     const cubeType = (this.rubiksCube as any).getCubeType?.() || '3x3x3';
-    const cubeSize = cubeType === '2x2x2' ? 2 : 3;
+    let cubeSize = 3; // Default to 3x3x3
+
+    // Set cube size based on cube type
+    if (cubeType === '2x2x2') cubeSize = 2;
+    else if (cubeType === '4x4x4') cubeSize = 4;
+    else if (cubeType === '5x5x5') cubeSize = 5;
+    else if (cubeType === '6x6x6') cubeSize = 6;
+    else if (cubeType === '10x10x10') cubeSize = 10;
 
     return {
       cubeState,
@@ -398,6 +405,7 @@ export class CubeStateManager {
           else if (currentCubeType === '4x4x4') currentCubeSize = 4;
           else if (currentCubeType === '5x5x5') currentCubeSize = 5;
           else if (currentCubeType === '6x6x6') currentCubeSize = 6;
+          else if (currentCubeType === '10x10x10') currentCubeSize = 10;
 
           // If cube sizes don't match, switch to the appropriate cube size
           if (cubeSize !== currentCubeSize) {
@@ -418,6 +426,7 @@ export class CubeStateManager {
               else if (cubeSize === 4) cubeTypeStr = '4x4x4';
               else if (cubeSize === 5) cubeTypeStr = '5x5x5';
               else if (cubeSize === 6) cubeTypeStr = '6x6x6';
+              else if (cubeSize === 10) cubeTypeStr = '10x10x10';
               standardizeCubeConfig(cubeTypeStr);
             }
           } else {
@@ -427,6 +436,7 @@ export class CubeStateManager {
             else if (cubeSize === 4) cubeTypeStr = '4x4x4';
             else if (cubeSize === 5) cubeTypeStr = '5x5x5';
             else if (cubeSize === 6) cubeTypeStr = '6x6x6';
+            else if (cubeSize === 10) cubeTypeStr = '10x10x10';
             standardizeCubeConfig(cubeTypeStr);
           }
 
@@ -456,14 +466,21 @@ export class CubeStateManager {
     // Check cube state structure
     const faces = ['U', 'D', 'L', 'R', 'F', 'B'];
     
-    // For 2x2, 3x3, 4x4, 5x5, and 6x6 cubes
+    // For 2x2, 3x3, 4x4, 5x5, 6x6, and 10x10 cubes
     const isCube2x2 = data.cubeletsData.length === 8;
     const isCube3x3 = data.cubeletsData.length === 27;
     const isCube4x4 = data.cubeletsData.length === 64;
     const isCube5x5 = data.cubeletsData.length === 125;
     const isCube6x6 = data.cubeletsData.length === 216;
+    const isCube10x10 = data.cubeletsData.length === 1000;
     
-    if (!isCube2x2 && !isCube3x3 && !isCube4x4 && !isCube5x5 && !isCube6x6) {
+    // Check if we have an explicitly specified cube type or size
+    const hasCubeType = data.cubeType && typeof data.cubeType === 'string';
+    const hasCubeSize = data.cubeSize && typeof data.cubeSize === 'number';
+
+    // If no cube type/size and not a standard cube size, reject
+    if (!hasCubeType && !hasCubeSize && 
+        !isCube2x2 && !isCube3x3 && !isCube4x4 && !isCube5x5 && !isCube6x6 && !isCube10x10) {
       console.warn('Not a valid cube - cubelet count:', data.cubeletsData.length);
       return false; // Not a valid cube
     }
@@ -474,6 +491,7 @@ export class CubeStateManager {
     else if (isCube4x4) size = 4;
     else if (isCube5x5) size = 5;
     else if (isCube6x6) size = 6;
+    else if (isCube10x10) size = 10;
     
 
     
@@ -535,6 +553,8 @@ export class CubeStateManager {
         if (currentCubeType === '2x2x2') currentCubeSize = 2;
         else if (currentCubeType === '4x4x4') currentCubeSize = 4;
         else if (currentCubeType === '5x5x5') currentCubeSize = 5;
+        else if (currentCubeType === '6x6x6') currentCubeSize = 6;
+        else if (currentCubeType === '10x10x10') currentCubeSize = 10;
 
         // If cube sizes don't match, switch to the appropriate cube size
         if (cubeSize !== currentCubeSize) {
@@ -603,8 +623,24 @@ export class CubeStateManager {
    * Detect cube size from state data
    */
   private detectCubeSizeFromData(data: CubeStateData): number {
+    // Use cubeSize property if it exists in the data
+    if (data.cubeSize) {
+      return data.cubeSize;
+    }
+    
+    // Use cubeType property if it exists in the data
+    if (data.cubeType) {
+      if (data.cubeType === '2x2x2') return 2;
+      if (data.cubeType === '3x3x3') return 3;
+      if (data.cubeType === '4x4x4') return 4;
+      if (data.cubeType === '5x5x5') return 5;
+      if (data.cubeType === '6x6x6') return 6;
+      if (data.cubeType === '10x10x10') return 10;
+    }
+    
     // Detect from the number of cubelets in the data
-    // 2x2 cube has 8 cubelets, 3x3 cube has 27 cubelets, 4x4 cube has 64 cubelets, 5x5 cube has 125 cubelets, 6x6 cube has 216 cubelets
+    // 2x2 cube has 8 cubelets, 3x3 cube has 27 cubelets, 4x4 cube has 64 cubelets, 
+    // 5x5 cube has 125 cubelets, 6x6 cube has 216 cubelets, 10x10 cube has 1000 cubelets
     if (data.cubeletsData.length === 8) {
       return 2; // 2x2 cube
     } else if (data.cubeletsData.length === 27) {
@@ -615,6 +651,8 @@ export class CubeStateManager {
       return 5; // 5x5 cube
     } else if (data.cubeletsData.length === 216) {
       return 6; // 6x6 cube
+    } else if (data.cubeletsData.length === 1000) {
+      return 10; // 10x10 cube
     } else {
       // Try to determine from first face dimension if available
       if (data.cubeState && data.cubeState.U) {

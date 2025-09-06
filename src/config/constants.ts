@@ -86,6 +86,10 @@ export const STANDARD_CUBE_CONFIGS = {
   '6x6x6': {
     cubeSize: 0.97,  // Smaller cubelets for 6x6x6
     spacing: 0.012   // Smaller spacing for 6x6x6
+  },
+  '10x10x10': {
+    cubeSize: 0.55,  // Even smaller cubelets for 10x10x10
+    spacing: 0.008   // Smaller spacing for 10x10x10
   }
 };
 
@@ -115,6 +119,10 @@ export function standardizeCubeConfig(cubeType: string): void {
     CUBE_CONFIG.size = 6;
     CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['6x6x6'].cubeSize;
     CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['6x6x6'].spacing;
+  } else if (cubeType === '10x10x10') {
+    CUBE_CONFIG.size = 10;
+    CUBE_CONFIG.cubeSize = STANDARD_CUBE_CONFIGS['10x10x10'].cubeSize;
+    CUBE_CONFIG.spacing = STANDARD_CUBE_CONFIGS['10x10x10'].spacing;
   }
   // Additional cube types can be added here
   
